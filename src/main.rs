@@ -6,6 +6,7 @@ use dotenv::dotenv;
 mod app;
 mod db;
 mod handlers;
+mod models;
 mod router;
 
 #[tokio::main]
