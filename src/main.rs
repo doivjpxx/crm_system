@@ -1,3 +1,8 @@
+use std::sync::Arc;
+
+use app::AppState;
+use dotenv::dotenv;
+
 mod app;
 mod db;
 mod handlers;
@@ -5,5 +10,10 @@ mod router;
 
 #[tokio::main]
 async fn main() {
-    app::run_app().await;
+    dotenv().ok();
+    tracing_subscriber::fmt::init();
+
+    let pool = db::connect().await;
+
+    app::run_app(Arc::new(AppState { pool })).await;
 }
