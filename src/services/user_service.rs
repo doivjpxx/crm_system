@@ -6,6 +6,7 @@ use super::auth_service::AuthService;
 pub struct CreateUserRequest {
     pub username: String,
     pub email: String,
+    pub name: String,
     pub password: String,
 }
 
@@ -38,12 +39,13 @@ impl UserService {
 
         sqlx::query!(
             r#"
-            INSERT INTO users (username, email, password)
-            VALUES ($1, $2, $3)
+            INSERT INTO users (username, email, name, password)
+            VALUES ($1, $2, $3, $4)
             RETURNING id
             "#,
             user.username,
             user.email,
+            user.name,
             password
         )
         .fetch_one(&self.pool)
