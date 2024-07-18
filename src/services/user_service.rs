@@ -35,7 +35,7 @@ impl UserService {
     }
 
     pub async fn create_user(&self, user: CreateUserRequest) -> Result<(), String> {
-        let password = AuthService::hash_password(user.password).await;
+        let password = AuthService::new().hash_password(user.password).await;
 
         let password = match password {
             Ok(password) => password,
@@ -103,7 +103,9 @@ impl UserService {
             "Failed to get user".to_string()
         })?;
 
-        let matches = AuthService::verify_password(password, user.password).await;
+        let matches = AuthService::new()
+            .verify_password(password, user.password)
+            .await;
 
         if matches.is_err() {
             return Err("Invalid password".to_string());

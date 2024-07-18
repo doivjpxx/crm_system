@@ -15,28 +15,40 @@ use crate::{
     middlewares::{auth::auth_middleware, sys::sys_middleware},
 };
 
-pub fn create_router(app_state: Arc<AppState>) -> Router {
-    let sys_pub_routes = Router::new().route("/login", post(sys_login));
-    let sys_routes = Router::new()
-        .route("/user", post(create_user))
-        .route("/me", get(get_sys))
-        .layer(axum::middleware::from_fn(sys_middleware));
+pub struct AppRouter {
+    pub app_state: Arc<AppState>,
+}
 
-    let user_routes = Router::new()
-        .route("/profile/me", get(get_current_user))
-        .route("/:username", get(get_user))
-        .layer(axum::middleware::from_fn(auth_middleware));
+impl AppRouter {
+    pub fn new(self) -> Self {
+        Self {
+            app_state: self.app_state,
+        }
+    }
 
-    let auth_routes = Router::new().route("/login", post(login));
+    pub fn create(&self) -> Router {
+        let sys_pub_routes = Router::new().route("/login", post(sys_login));
+        let sys_routes = Router::new()
+            .route("/user", post(create_user))
+            .route("/me", get(get_sys))
+            .layer(axum::middleware::from_fn(sys_middleware));
 
-    let api_routes = Router::new()
-        .nest("/sys", sys_pub_routes)
-        .nest("/sys", sys_routes)
-        .nest("/auth", auth_routes)
-        .nest("/users", user_routes);
+        let user_routes = Router::new()
+            .route("/profile/me", get(get_current_user))
+            .route("/:username", get(get_user))
+            .layer(axum::middleware::from_fn(auth_middleware));
 
-    Router::new()
-        .route("/health", get(health))
-        .nest("/api", api_routes)
-        .with_state(app_state)
+        let auth_routes = Router::new().route("/login", post(login));
+
+        let api_routes = Router::new()
+            .nest("/sys", sys_pub_routes)
+            .nest("/sys", sys_routes)
+            .nest("/auth", auth_routes)
+            .nest("/users", user_routes);
+
+        Router::new()
+            .route("/health", get(health))
+            .nest("/api", api_routes)
+            .with_state(self.app_state.to_owned())
+    }
 }

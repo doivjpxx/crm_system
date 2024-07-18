@@ -1,5 +1,11 @@
-use axum::{http::StatusCode, response::IntoResponse};
+use axum::{http::StatusCode, response::IntoResponse, Json};
 
 pub async fn health() -> impl IntoResponse {
-    (StatusCode::OK, "OK")
+    (
+        StatusCode::OK,
+        Json(serde_json::json!({
+            "status": "ok",
+            "message": "Server is running"
+        })),
+    )
 }

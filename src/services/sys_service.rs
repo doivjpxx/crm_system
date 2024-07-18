@@ -63,7 +63,9 @@ impl SysService {
             "Failed to get sys".to_string()
         })?;
 
-        let matches = AuthService::verify_password(user.password, sys.password).await;
+        let matches = AuthService::new()
+            .verify_password(user.password, sys.password)
+            .await;
 
         if matches.is_err() {
             return Err("Invalid password".to_string());

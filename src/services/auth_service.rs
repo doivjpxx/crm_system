@@ -3,25 +3,39 @@ use argon2::{
     Argon2,
 };
 
-pub struct AuthService;
+pub struct AuthService<'a> {
+    argon2: Argon2<'a>,
+    salt: SaltString,
+}
 
-impl AuthService {
-    pub async fn hash_password(password: String) -> Result<String, argon2::password_hash::Error> {
-        let argon2 = Argon2::default();
-        let salt = SaltString::generate(&mut OsRng);
-        let password_hash = argon2
-            .hash_password(password.as_bytes(), &salt)?
+impl<'a> AuthService<'a> {
+    pub fn new() -> Self {
+        Self {
+            argon2: Argon2::default(),
+            salt: SaltString::generate(&mut OsRng),
+        }
+    }
+
+    pub async fn hash_password(
+        &self,
+        password: String,
+    ) -> Result<String, argon2::password_hash::Error> {
+        let password_hash = self
+            .argon2
+            .hash_password(password.as_bytes(), &self.salt)?
             .to_string();
         Ok(password_hash.to_string())
     }
 
     pub async fn verify_password(
+        &self,
         password: String,
         hash: String,
     ) -> Result<bool, argon2::password_hash::Error> {
-        let argon2 = Argon2::default();
         let password_hash = PasswordHash::new(&hash)?;
-        let matches = argon2.verify_password(password.as_bytes(), &password_hash);
+        let matches = self
+            .argon2
+            .verify_password(password.as_bytes(), &password_hash);
 
         if matches.is_ok() {
             Ok(true)

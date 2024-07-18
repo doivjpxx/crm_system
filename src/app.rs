@@ -10,7 +10,7 @@ use tower_http::{
 };
 use tracing::info_span;
 
-use crate::router;
+use crate::router::AppRouter;
 
 pub struct AppState {
     pub pool: sqlx::PgPool,
@@ -27,21 +27,24 @@ pub async fn run_app(app_state: Arc<AppState>) {
         .allow_origin(Any)
         .allow_headers([CONTENT_TYPE]);
 
-    let router = router::create_router(app_state).layer(cors).layer(
-        TraceLayer::new_for_http().make_span_with(|request: &Request<_>| {
-            let matched_path = request
-                .extensions()
-                .get::<MatchedPath>()
-                .map(MatchedPath::as_str);
+    let router = AppRouter::new(AppRouter { app_state })
+        .create()
+        .layer(cors)
+        .layer(
+            TraceLayer::new_for_http().make_span_with(|request: &Request<_>| {
+                let matched_path = request
+                    .extensions()
+                    .get::<MatchedPath>()
+                    .map(MatchedPath::as_str);
 
-            info_span!(
-                "http_request",
-                method = ?request.method(),
-                matched_path,
-                some_other_field = tracing::field::Empty,
-            )
-        }),
-    );
+                info_span!(
+                    "http_request",
+                    method = ?request.method(),
+                    matched_path,
+                    some_other_field = tracing::field::Empty,
+                )
+            }),
+        );
 
     tracing::info!("[APP] --> Server started successfully at {}", addr);
 
