@@ -1,2 +1,2 @@
 -- Add up migration script here
-INSERT INTO sys (name, username, password) VALUES ('SysAdmin', 'sys', 'crm@system');
+INSERT INTO sys (name, username, password) VALUES ('SysAdmin', 'sys', '$argon2id$v=19$m=19456,t=2,p=1$dLvhCGbiWvQ2CpMZ2zoHig$kV+fGikDgCrJ0nTnpdvlDRh43DR2o7CgoVmFeYJ0+JE');

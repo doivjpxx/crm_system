@@ -13,7 +13,7 @@ use axum_extra::{
 };
 use serde::{Deserialize, Serialize};
 
-use super::user_service::UserResponse;
+use super::{sys_service::SysResponse, user_service::UserResponse};
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Claims {
@@ -54,6 +54,22 @@ impl Claims {
             iat,
             exp,
             is_sys: None,
+        };
+
+        return encode(&Header::default(), &claims, &KEYS.encoding)
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    pub fn encode_jwt_sys(sys: SysResponse) -> Result<String, StatusCode> {
+        let now = chrono::Utc::now();
+        let iat = now.timestamp() as usize;
+        let exp = now.timestamp() as usize + 60 * 60;
+        let claims = Claims {
+            sub: sys.username.clone(),
+            username: sys.username.clone(),
+            iat,
+            exp,
+            is_sys: Some(true),
         };
 
         return encode(&Header::default(), &claims, &KEYS.encoding)

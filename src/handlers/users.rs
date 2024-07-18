@@ -34,7 +34,7 @@ pub async fn create_user(
 }
 
 pub async fn get_user(
-    claims: Claims,
+    _: Claims,
     Path(username): Path<String>,
     State(state): State<Arc<AppState>>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
