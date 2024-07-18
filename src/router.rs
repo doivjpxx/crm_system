@@ -12,14 +12,18 @@ use crate::{
         sys::sys_login,
         users::{create_user, get_user, login},
     },
+    middlewares::{sys::sys_middleware, auth::auth_middleware},
 };
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
-    let sys_routes = Router::new()
-        .route("/login", post(sys_login))
-        .route("/user/create", post(create_user));
+    let sys_routes = Router::new().route("/login", post(sys_login)).route(
+        "/user/create",
+        post(create_user).layer(axum::middleware::from_fn(sys_middleware)),
+    );
 
-    let user_routes = Router::new().route("/:username", get(get_user));
+    let user_routes = Router::new()
+        .route("/:username", get(get_user))
+        .layer(axum::middleware::from_fn(auth_middleware));
 
     let auth_routes = Router::new().route("/login", post(login));
 

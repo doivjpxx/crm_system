@@ -1,5 +1,15 @@
 use std::{env, sync::Arc};
 
+use axum::{
+    extract::{MatchedPath, Request},
+    http::{header::CONTENT_TYPE, Method},
+};
+use tower_http::{
+    cors::{Any, CorsLayer},
+    trace::TraceLayer,
+};
+use tracing::info_span;
+
 use crate::router;
 
 pub struct AppState {
@@ -12,7 +22,28 @@ pub async fn run_app(app_state: Arc<AppState>) {
 
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
 
-    let router = router::create_router(app_state);
+    let cors = CorsLayer::new()
+        .allow_methods([Method::GET, Method::POST])
+        .allow_origin(Any)
+        .allow_headers([CONTENT_TYPE]);
+
+    let router = router::create_router(app_state).layer(cors).layer(
+        TraceLayer::new_for_http().make_span_with(|request: &Request<_>| {
+            let matched_path = request
+                .extensions()
+                .get::<MatchedPath>()
+                .map(MatchedPath::as_str);
+
+            info_span!(
+                "http_request",
+                method = ?request.method(),
+                matched_path,
+                some_other_field = tracing::field::Empty,
+            )
+        }),
+    );
+
+    tracing::info!("[APP] --> Server started successfully at {}", addr);
 
     axum::serve(listener, router.into_make_service())
         .await
