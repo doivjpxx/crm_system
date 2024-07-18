@@ -15,11 +15,21 @@ use crate::{
 };
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
+    let sys_routes = Router::new()
+        .route("/login", post(sys_login))
+        .route("/user/create", post(create_user));
+
+    let user_routes = Router::new().route("/:username", get(get_user));
+
+    let auth_routes = Router::new().route("/login", post(login));
+
+    let api_routes = Router::new()
+        .nest("/sys", sys_routes)
+        .nest("/auth", auth_routes)
+        .nest("/users", user_routes);
+
     Router::new()
         .route("/health", get(health))
-        .route("/sys/login", post(sys_login))
-        .route("/user", post(create_user))
-        .route("/login", post(login))
-        .route("/user/:id", get(get_user))
+        .nest("/api", api_routes)
         .with_state(app_state)
 }
