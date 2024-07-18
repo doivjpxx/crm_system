@@ -4,7 +4,10 @@ use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 
 use crate::{
     app::AppState,
-    services::sys_service::{SysLoginRequest, SysService},
+    services::{
+        claim_service::Claims,
+        sys_service::{SysLoginRequest, SysService},
+    },
 };
 
 pub async fn sys_login(
@@ -14,10 +17,25 @@ pub async fn sys_login(
     let sys_service = SysService::new(state.pool.clone());
 
     match sys_service.login(sys_user).await {
-        Ok(_) => Ok((
+        Ok(token) => Ok((
             StatusCode::OK,
-            Json(serde_json::json!({ "message": "Logged in" })),
+            Json(serde_json::json!({ "token": token, "type": "Bearer" })),
         )),
+        Err(e) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": e })),
+        )),
+    }
+}
+
+pub async fn get_sys(
+    claims: Claims,
+    State(state): State<Arc<AppState>>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let sys_service = SysService::new(state.pool.clone());
+
+    match sys_service.get_sys(claims.username).await {
+        Ok(sys) => Ok((StatusCode::OK, Json(serde_json::json!(sys)))),
         Err(e) => Err((
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(serde_json::json!({ "error": e })),

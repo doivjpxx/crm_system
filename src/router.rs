@@ -9,25 +9,28 @@ use crate::{
     app::AppState,
     handlers::{
         health::health,
-        sys::sys_login,
-        users::{create_user, get_user, login},
+        sys::{get_sys, sys_login},
+        users::{create_user, get_current_user, get_user, login},
     },
-    middlewares::{sys::sys_middleware, auth::auth_middleware},
+    middlewares::{auth::auth_middleware, sys::sys_middleware},
 };
 
 pub fn create_router(app_state: Arc<AppState>) -> Router {
-    let sys_routes = Router::new().route("/login", post(sys_login)).route(
-        "/user/create",
-        post(create_user).layer(axum::middleware::from_fn(sys_middleware)),
-    );
+    let sys_pub_routes = Router::new().route("/login", post(sys_login));
+    let sys_routes = Router::new()
+        .route("/user", post(create_user))
+        .route("/me", get(get_sys))
+        .layer(axum::middleware::from_fn(sys_middleware));
 
     let user_routes = Router::new()
+        .route("/profile/me", get(get_current_user))
         .route("/:username", get(get_user))
         .layer(axum::middleware::from_fn(auth_middleware));
 
     let auth_routes = Router::new().route("/login", post(login));
 
     let api_routes = Router::new()
+        .nest("/sys", sys_pub_routes)
         .nest("/sys", sys_routes)
         .nest("/auth", auth_routes)
         .nest("/users", user_routes);

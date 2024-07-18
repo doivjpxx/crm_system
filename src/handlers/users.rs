@@ -44,6 +44,21 @@ pub async fn get_user(
         Ok(user) => Ok((StatusCode::OK, Json(user))),
         Err(e) => Err((
             StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!(e)),
+        )),
+    }
+}
+
+pub async fn get_current_user(
+    claims: Claims,
+    State(state): State<Arc<AppState>>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let user_service = UserService::new(state.pool.clone());
+
+    match user_service.get_user(claims.username).await {
+        Ok(user) => Ok((StatusCode::OK, Json(user))),
+        Err(e) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
             Json(serde_json::json!({ "error": e })),
         )),
     }
@@ -56,10 +71,13 @@ pub async fn login(
     let user_service = UserService::new(state.pool.clone());
 
     match user_service.login(user.username, user.password).await {
-        Ok(token) => Ok((StatusCode::OK, Json(serde_json::json!({ "token": token })))),
+        Ok(token) => Ok((
+            StatusCode::OK,
+            Json(serde_json::json!({ "token": token, "type": "Bearer" })),
+        )),
         Err(e) => Err((
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(serde_json::json!({ "error": e })),
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({ "error": "Bad request", "message": e })),
         )),
     }
 }

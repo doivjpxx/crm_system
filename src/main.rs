@@ -6,10 +6,10 @@ use dotenv::dotenv;
 mod app;
 mod db;
 mod handlers;
+mod middlewares;
 mod models;
 mod router;
 mod services;
-mod middlewares;
 
 #[tokio::main]
 async fn main() {

@@ -45,6 +45,8 @@ static KEYS: Lazy<Keys> = Lazy::new(|| {
 
 impl Claims {
     pub fn encode_jwt(user: UserResponse) -> Result<String, (StatusCode, String)> {
+        tracing::info!("claim_service --> encoding jwt for user");
+
         let now = chrono::Utc::now();
         let iat = now.timestamp() as usize;
         let exp = now.timestamp() as usize + 60 * 60;
@@ -61,6 +63,8 @@ impl Claims {
     }
 
     pub fn encode_jwt_sys(sys: SysResponse) -> Result<String, (StatusCode, String)> {
+        tracing::info!("claim_service --> encoding jwt for sys");
+
         let now = chrono::Utc::now();
         let iat = now.timestamp() as usize;
         let exp = now.timestamp() as usize + 60 * 60;
@@ -72,13 +76,19 @@ impl Claims {
             is_sys: Some(true),
         };
 
-        return encode(&Header::default(), &claims, &KEYS.encoding)
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()));
+        return encode(&Header::default(), &claims, &KEYS.encoding).map_err(|e| {
+            tracing::error!("claim_service --> Failed to encode jwt: {:?}", e);
+            return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string());
+        });
     }
 
     pub fn decode_jwt(jwt: &str) -> Result<TokenData<Claims>, (StatusCode, String)> {
-        decode(jwt, &KEYS.decoding, &Validation::default())
-            .map_err(|e| (StatusCode::UNAUTHORIZED, e.to_string()))
+        tracing::info!("claim_service --> decoding jwt");
+
+        decode(jwt, &KEYS.decoding, &Validation::default()).map_err(|e| {
+            tracing::error!("claim_service --> Failed to decode jwt: {:?}", e);
+            return (StatusCode::UNAUTHORIZED, e.to_string());
+        })
     }
 }
 

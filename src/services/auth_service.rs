@@ -23,6 +23,11 @@ impl AuthService {
         let password_hash = PasswordHash::new(&hash)?;
         let matches = argon2.verify_password(password.as_bytes(), &password_hash);
 
-        Ok(matches.is_ok())
+        if matches.is_ok() {
+            Ok(true)
+        } else {
+            tracing::error!("Failed to verify password: {:?}", matches);
+            Err(matches.err().unwrap())
+        }
     }
 }
