@@ -1,1 +1,1 @@
-sqlx migrate run
+git update-index --chmod=+x sqlx migrate run
