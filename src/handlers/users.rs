@@ -11,7 +11,7 @@ use crate::{
     app::AppState,
     services::{
         claim_service::Claims,
-        user_service::{CreateUserRequest, LoginRequest, UserService},
+        user_service::{ChangePasswordRequest, CreateUserRequest, LoginRequest, UserService},
     },
 };
 
@@ -78,6 +78,28 @@ pub async fn login(
         Err(e) => Err((
             StatusCode::BAD_REQUEST,
             Json(serde_json::json!({ "error": "Bad request", "message": e })),
+        )),
+    }
+}
+
+pub async fn change_password(
+    claims: Claims,
+    State(state): State<Arc<AppState>>,
+    Json(user): Json<ChangePasswordRequest>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let user_service = UserService::new(state.pool.clone());
+
+    match user_service
+        .change_password(claims.username, user.old_password, user.new_password)
+        .await
+    {
+        Ok(_) => Ok((
+            StatusCode::OK,
+            Json(serde_json::json!({ "message": "Password changed" })),
+        )),
+        Err(e) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": e })),
         )),
     }
 }

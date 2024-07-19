@@ -16,6 +16,12 @@ pub struct LoginRequest {
     pub password: String,
 }
 
+#[derive(Deserialize)]
+pub struct ChangePasswordRequest {
+    pub old_password: String,
+    pub new_password: String,
+}
+
 #[derive(Serialize)]
 pub struct UserResponse {
     pub id: uuid::Uuid,
@@ -124,5 +130,59 @@ impl UserService {
         })?;
 
         Ok(jwt)
+    }
+
+    pub async fn change_password(
+        &self,
+        username: String,
+        old_password: String,
+        new_password: String,
+    ) -> Result<(), String> {
+        let user = sqlx::query!(
+            r#"
+            SELECT * FROM users WHERE username = $1
+            "#,
+            username
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to get user: {:?}", e);
+            "Failed to get user".to_string()
+        })?;
+
+        let matches = AuthService::new()
+            .verify_password(old_password, user.password)
+            .await;
+
+        if matches.is_err() {
+            return Err("Invalid password".to_string());
+        }
+
+        let new_password = AuthService::new().hash_password(new_password).await;
+
+        let new_password = match new_password {
+            Ok(password) => password,
+            Err(e) => {
+                tracing::error!("Failed to hash password: {:?}", e);
+                return Err("Failed to hash password".to_string());
+            }
+        };
+
+        sqlx::query!(
+            r#"
+            UPDATE users SET password = $1 WHERE username = $2
+            "#,
+            new_password,
+            username
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to update password: {:?}", e);
+            "Failed to update password".to_string()
+        })?;
+
+        Ok(())
     }
 }
