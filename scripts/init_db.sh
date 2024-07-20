@@ -1,1 +1,1 @@
-sqlx migrate run
+sudo -u postgres psql -c 'create database crm_system_db;' && sudo -u postgres psql -c 'grant all privileges on database crm_system_db to postgres;' && sqlx migrate run
