@@ -10,6 +10,7 @@ use crate::{
     handlers::{
         health::health,
         plans::{create_plan, get_plan, get_plans, update_plan},
+        subscriptions::{create_subscription, get_subscription, get_subscription_by_user},
         sys::{get_sys, sys_login},
         users::{change_password, create_user, get_current_user, get_user, login},
     },
@@ -22,6 +23,7 @@ pub struct AppRouter {
 
 impl AppRouter {
     pub fn new(self) -> Self {
+        tracing::info!("Creating AppRouter");
         Self {
             app_state: self.app_state,
         }
@@ -33,6 +35,8 @@ impl AppRouter {
             .route("/users", post(create_user))
             .route("/me", get(get_sys))
             .route("/plans", post(create_plan).put(update_plan))
+            .route("/subscriptions", post(create_subscription))
+            .route("/subscriptions/:id", get(get_subscription))
             .layer(axum::middleware::from_fn(sys_middleware));
 
         let user_routes = Router::new()
@@ -47,12 +51,17 @@ impl AppRouter {
             .route("/", get(get_plans))
             .route("/:id", get(get_plan));
 
+        let subscription_routes = Router::new()
+            .route("/:id", get(get_subscription))
+            .route("/user/:username", get(get_subscription_by_user));
+
         let api_routes = Router::new()
             .nest("/sys", sys_pub_routes)
             .nest("/sys", sys_routes)
             .nest("/auth", auth_routes)
             .nest("/users", user_routes)
-            .nest("/plans", plan_routes);
+            .nest("/plans", plan_routes)
+            .nest("/subscriptions", subscription_routes);
 
         Router::new()
             .route("/health", get(health))

@@ -1,4 +1,4 @@
-use chrono::{NaiveDateTime, Utc};
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize)]
@@ -20,7 +20,7 @@ pub struct PlanResponse {
     pub is_active: Option<bool>,
     pub tags: Option<Vec<String>>,
     pub trial_days: Option<i32>,
-    pub created_at: Option<NaiveDateTime>
+    pub created_at: Option<NaiveDateTime>,
 }
 
 pub struct PlanService {
@@ -122,7 +122,11 @@ impl PlanService {
             .collect())
     }
 
-    pub async fn update_plan(&self, id: uuid::Uuid, plan: CreatePlanRequest) -> Result<PlanResponse, String> {
+    pub async fn update_plan(
+        &self,
+        id: uuid::Uuid,
+        plan: CreatePlanRequest,
+    ) -> Result<PlanResponse, String> {
         let plan = sqlx::query!(
             r#"
             UPDATE plans

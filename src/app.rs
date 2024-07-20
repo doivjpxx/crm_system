@@ -27,6 +27,8 @@ pub async fn run_app(app_state: Arc<AppState>) {
         .allow_origin(Any)
         .allow_headers([CONTENT_TYPE]);
 
+    tracing::info!("CORS enabled");
+
     let router = AppRouter::new(AppRouter { app_state })
         .create()
         .layer(cors)
@@ -46,7 +48,7 @@ pub async fn run_app(app_state: Arc<AppState>) {
             }),
         );
 
-    tracing::info!("[APP] --> Server started successfully at {}", addr);
+    tracing::info!("Server started successfully at {}", addr);
 
     axum::serve(listener, router.into_make_service())
         .await
