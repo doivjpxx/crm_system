@@ -6,6 +6,16 @@ jobs:
   clippy:
     name: Clippy
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: crm_system_db
+        ports:
+          - 5432:5432
+
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
@@ -32,6 +42,16 @@ jobs:
   rustfmt:
     name: Format
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: crm_system_db
+        ports:
+          - 5432:5432
+
     steps:
       - name: Checkout sources
         uses: actions/checkout@v2
