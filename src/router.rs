@@ -22,10 +22,10 @@ pub struct AppRouter {
 }
 
 impl AppRouter {
-    pub fn new(self) -> Self {
+    pub fn new(app_state: Arc<AppState>) -> Self {
         tracing::info!("Creating AppRouter");
         Self {
-            app_state: self.app_state,
+            app_state,
         }
     }
 

@@ -58,8 +58,8 @@ impl Claims {
             is_sys: None,
         };
 
-        return encode(&Header::default(), &claims, &KEYS.encoding)
-            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()));
+        encode(&Header::default(), &claims, &KEYS.encoding)
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
     }
 
     pub fn encode_jwt_sys(sys: SysResponse) -> Result<String, (StatusCode, String)> {
@@ -76,10 +76,10 @@ impl Claims {
             is_sys: Some(true),
         };
 
-        return encode(&Header::default(), &claims, &KEYS.encoding).map_err(|e| {
+        encode(&Header::default(), &claims, &KEYS.encoding).map_err(|e| {
             tracing::error!("claim_service --> Failed to encode jwt: {:?}", e);
-            return (StatusCode::INTERNAL_SERVER_ERROR, e.to_string());
-        });
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
+        })
     }
 
     pub fn decode_jwt(jwt: &str) -> Result<TokenData<Claims>, (StatusCode, String)> {
@@ -87,7 +87,7 @@ impl Claims {
 
         decode(jwt, &KEYS.decoding, &Validation::default()).map_err(|e| {
             tracing::error!("claim_service --> Failed to decode jwt: {:?}", e);
-            return (StatusCode::UNAUTHORIZED, e.to_string());
+            (StatusCode::UNAUTHORIZED, e.to_string())
         })
     }
 }

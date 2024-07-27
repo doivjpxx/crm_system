@@ -29,7 +29,7 @@ pub async fn run_app(app_state: Arc<AppState>) {
 
     tracing::info!("CORS enabled");
 
-    let router = AppRouter::new(AppRouter { app_state })
+    let router = AppRouter::new(app_state)
         .create()
         .layer(cors)
         .layer(
