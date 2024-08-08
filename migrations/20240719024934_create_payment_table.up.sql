@@ -1,6 +1,6 @@
 -- Add up migration script here
 CREATE TABLE payments (
-    id UUID PRIMARY KEY,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     subscription_id UUID REFERENCES subscriptions(id) ON DELETE CASCADE,
     amount BIGINT NOT NULL,
     payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
