@@ -13,7 +13,6 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     libpq-dev
 
-
 # Build the dependencies separately to take advantage of Docker layer caching
 RUN cargo build --release || true
 
