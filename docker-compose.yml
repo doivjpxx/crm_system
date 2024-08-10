@@ -1,0 +1,15 @@
+version: '3'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+    volumes:
+      - .:/app
+    environment:
+      - RUST_LOG=info
+      - PORT=3000
+      - SECRET_KEY=${{ secrets.SECRET_KEY }}
+      - DATABASE_URL=${{ secrets.DATABASE_URL }}
