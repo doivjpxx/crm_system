@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y \
 RUN cargo build --release || true
 
 # Copy the source code to the container
-COPY src ./src
+COPY . .
 
 RUN cargo install sqlx-cli --no-default-features --features postgres
 
