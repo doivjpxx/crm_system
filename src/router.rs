@@ -8,11 +8,7 @@ use axum::{
 use crate::{
     app::AppState,
     handlers::{
-        health::health,
-        plans::{create_plan, get_plan, get_plans, update_plan},
-        subscriptions::{create_subscription, get_subscription, get_subscription_by_user},
-        sys::{get_sys, sys_login},
-        users::{change_password, create_user, get_current_user, get_user, login},
+        health::health, plans::{create_plan, get_plan, get_plans, update_plan}, resources::{get_resource, get_resources, get_resources_by_plan}, subscriptions::{create_subscription, get_subscription, get_subscription_by_user}, sys::{get_sys, sys_login}, users::{change_password, create_user, get_current_user, get_user, login}
     },
     middlewares::{auth::auth_middleware, sys::sys_middleware},
 };
@@ -49,6 +45,11 @@ impl AppRouter {
             .route("/", get(get_plans))
             .route("/:id", get(get_plan));
 
+        let resource_routes = Router::new()
+            .route("/", get(get_resources))
+            .route("/:id", get(get_resource))
+            .route("/plan/:plan_id", get(get_resources_by_plan));
+
         let subscription_routes = Router::new()
             .route("/:id", get(get_subscription))
             .route("/user/:username", get(get_subscription_by_user));
@@ -59,6 +60,7 @@ impl AppRouter {
             .nest("/auth", auth_routes)
             .nest("/users", user_routes)
             .nest("/plans", plan_routes)
+            .nest("/resources", resource_routes)
             .nest("/subscriptions", subscription_routes);
 
         Router::new()
