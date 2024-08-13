@@ -4,3 +4,4 @@ pub mod resources;
 pub mod subscriptions;
 pub mod sys;
 pub mod users;
+pub mod permissions;

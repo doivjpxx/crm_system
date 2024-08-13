@@ -8,7 +8,13 @@ use axum::{
 use crate::{
     app::AppState,
     handlers::{
-        health::health, plans::{create_plan, get_plan, get_plans, update_plan}, resources::{get_resource, get_resources, get_resources_by_plan}, subscriptions::{create_subscription, get_subscription, get_subscription_by_user}, sys::{get_sys, sys_login}, users::{change_password, create_user, get_current_user, get_user, login}
+        health::health,
+        permissions::get_permissions,
+        plans::{create_plan, get_plan, get_plans, update_plan},
+        resources::{create_resource, get_resource, get_resources, get_resources_by_plan},
+        subscriptions::{create_subscription, get_subscription, get_subscription_by_user},
+        sys::{get_sys, sys_login},
+        users::{change_password, create_user, get_current_user, get_user, login},
     },
     middlewares::{auth::auth_middleware, sys::sys_middleware},
 };
@@ -30,8 +36,10 @@ impl AppRouter {
             .route("/me", get(get_sys))
             .route("/plans", post(create_plan).put(update_plan))
             .route("/subscriptions", post(create_subscription))
-            .route("/subscriptions/:id", get(get_subscription))
+            .route("/resources", post(create_resource))
             .layer(axum::middleware::from_fn(sys_middleware));
+
+        let permission_routes = Router::new().route("/", get(get_permissions));
 
         let user_routes = Router::new()
             .route("/profile/me", get(get_current_user))
@@ -52,11 +60,13 @@ impl AppRouter {
 
         let subscription_routes = Router::new()
             .route("/:id", get(get_subscription))
-            .route("/user/:username", get(get_subscription_by_user));
+            .route("/user/:username", get(get_subscription_by_user))
+            .layer(axum::middleware::from_fn(auth_middleware));
 
         let api_routes = Router::new()
             .nest("/sys", sys_pub_routes)
             .nest("/sys", sys_routes)
+            .nest("/permissions", permission_routes)
             .nest("/auth", auth_routes)
             .nest("/users", user_routes)
             .nest("/plans", plan_routes)

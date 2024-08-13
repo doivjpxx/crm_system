@@ -1,7 +1,9 @@
 pub mod auth_service;
 pub mod claim_service;
+pub mod permission_service;
 pub mod plan_service;
+pub mod resource_service;
+pub mod role_service;
 pub mod subscription_service;
 pub mod sys_service;
 pub mod user_service;
-pub mod resource_service;

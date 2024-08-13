@@ -7,7 +7,25 @@ use axum::{
     Json,
 };
 
-use crate::{app::AppState, services::resource_service::ResourceService};
+use crate::{
+    app::AppState,
+    services::resource_service::{CreateResourceRequest, ResourceService},
+};
+
+pub async fn create_resource(
+    State(state): State<Arc<AppState>>,
+    Json(resource): Json<CreateResourceRequest>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let service = ResourceService::new(state.pool.clone());
+
+    match service.create_resource(resource).await {
+        Ok(resource) => Ok((StatusCode::CREATED, Json(resource))),
+        Err(e) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": e })),
+        )),
+    }
+}
 
 pub async fn get_resources_by_plan(
     Path(plan_id): Path<uuid::Uuid>,
