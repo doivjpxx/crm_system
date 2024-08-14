@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod create_role;
 pub mod sys;
 
 use axum::{extract::Request, http::StatusCode};

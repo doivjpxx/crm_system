@@ -13,15 +13,18 @@ use axum_extra::{
 };
 use serde::{Deserialize, Serialize};
 
-use super::{sys_service::SysResponse, user_service::UserResponse};
+use super::{sys_service::SysResponse, user_service::{ResourceForUser, SubscriptionForUser, UserWithSubscriptionResponse}};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Deserialize, Serialize)]
 pub struct Claims {
     pub sub: String,
     pub username: String,
+    pub plan_id: Option<uuid::Uuid>,
     pub iat: usize,
     pub exp: usize,
     pub is_sys: Option<bool>,
+    pub subscription: Option<SubscriptionForUser>,
+    pub resources: Vec<ResourceForUser>
 }
 
 pub struct Keys {
@@ -44,7 +47,7 @@ static KEYS: Lazy<Keys> = Lazy::new(|| {
 });
 
 impl Claims {
-    pub fn encode_jwt(user: UserResponse) -> Result<String, (StatusCode, String)> {
+    pub fn encode_jwt(user: UserWithSubscriptionResponse) -> Result<String, (StatusCode, String)> {
         tracing::info!("claim_service --> encoding jwt for user");
 
         let now = chrono::Utc::now();
@@ -56,6 +59,9 @@ impl Claims {
             iat,
             exp,
             is_sys: None,
+            plan_id: user.subscription.as_ref().map(|s| s.plan_id),
+            subscription: user.subscription,
+            resources: user.resources,
         };
 
         encode(&Header::default(), &claims, &KEYS.encoding)
@@ -74,6 +80,9 @@ impl Claims {
             iat,
             exp,
             is_sys: Some(true),
+            plan_id: None,
+            subscription: None,
+            resources: vec![],
         };
 
         encode(&Header::default(), &claims, &KEYS.encoding).map_err(|e| {

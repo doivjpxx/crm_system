@@ -31,6 +31,35 @@ pub struct UserResponse {
     pub is_sys: Option<bool>,
 }
 
+#[derive(Serialize)]
+pub struct UserWithSubscriptionResponse {
+    pub id: uuid::Uuid,
+    pub username: String,
+    pub name: String,
+    pub email: String,
+    pub is_sys: Option<bool>,
+    pub subscription: Option<SubscriptionForUser>,
+    pub resources: Vec<ResourceForUser>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct SubscriptionForUser {
+    pub id: uuid::Uuid,
+    pub plan_id: uuid::Uuid,
+    pub is_active: bool,
+    pub start_date: Option<chrono::NaiveDateTime>,
+    pub end_date: Option<chrono::NaiveDateTime>,
+    pub trial_start_date: Option<chrono::NaiveDateTime>,
+    pub trial_end_date: Option<chrono::NaiveDateTime>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ResourceForUser {
+    pub id: uuid::Uuid,
+    pub name: String,
+    pub max: i64,
+}
+
 pub struct UserService {
     pub pool: sqlx::PgPool,
 }
@@ -117,12 +146,55 @@ impl UserService {
             return Err("Invalid password".to_string());
         }
 
-        let jwt = claim_service::Claims::encode_jwt(UserResponse {
+        let user_subscription = sqlx::query!(
+            r#"
+            SELECT * FROM subscriptions WHERE user_id = $1
+            "#,
+            user.id
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to get user subscription: {:?}", e);
+            "Failed to get user subscription".to_string()
+        })?;
+
+        let resources = sqlx::query!(
+            r#"
+            SELECT * FROM resources WHERE plan_id = $1
+            "#,
+            user_subscription.as_ref().map(|s| s.plan_id).unwrap_or_default()
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to get resources: {:?}", e);
+            "Failed to get resources".to_string()
+        })?;
+
+        let jwt = claim_service::Claims::encode_jwt(UserWithSubscriptionResponse {
             id: user.id,
             username: user.username,
             name: user.name,
             email: user.email,
             is_sys: None,
+            subscription: user_subscription.map(|s| SubscriptionForUser {
+                id: s.id,
+                plan_id: s.plan_id.unwrap_or_default(),
+                is_active: s.is_active.unwrap_or_default(),
+                start_date: s.start_date,
+                end_date: s.end_date,
+                trial_start_date: s.trial_start_date,
+                trial_end_date: s.trial_end_date,
+            }),
+            resources: resources
+                .iter()
+                .map(|r| ResourceForUser {
+                    id: r.id,
+                    name: r.name.clone(),
+                    max: r.max,
+                })
+                .collect(),
         })
         .map_err(|e| {
             tracing::error!("Failed to encode jwt: {:?}", e);

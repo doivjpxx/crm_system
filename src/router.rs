@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::{
-    routing::{get, post},
+    routing::{get, post, put},
     Router,
 };
 
@@ -11,12 +11,15 @@ use crate::{
         health::health,
         permissions::get_permissions,
         plans::{create_plan, get_plan, get_plans, update_plan},
-        resources::{create_resource, get_resource, get_resources, get_resources_by_plan},
+        resources::{
+            create_resource, get_resource, get_resources, get_resources_by_plan, update_resource,
+        },
+        roles::{create_role, get_roles_by_user_created, update_role},
         subscriptions::{create_subscription, get_subscription, get_subscription_by_user},
         sys::{get_sys, sys_login},
         users::{change_password, create_user, get_current_user, get_user, login},
     },
-    middlewares::{auth::auth_middleware, sys::sys_middleware},
+    middlewares::{auth::auth_middleware, create_role::allow_create_role, sys::sys_middleware},
 };
 
 pub struct AppRouter {
@@ -37,6 +40,7 @@ impl AppRouter {
             .route("/plans", post(create_plan).put(update_plan))
             .route("/subscriptions", post(create_subscription))
             .route("/resources", post(create_resource))
+            .route("/resources/:id", put(update_resource))
             .layer(axum::middleware::from_fn(sys_middleware));
 
         let permission_routes = Router::new().route("/", get(get_permissions));
@@ -49,6 +53,14 @@ impl AppRouter {
 
         let auth_routes = Router::new().route("/login", post(login));
 
+        let role_routes = Router::new()
+            .route(
+                "/",
+                post(create_role).layer(axum::middleware::from_fn(allow_create_role)),
+            )
+            .route("/user/:id", get(get_roles_by_user_created))
+            .route("/:id", put(update_role))
+            .layer(axum::middleware::from_fn(auth_middleware));
         let plan_routes = Router::new()
             .route("/", get(get_plans))
             .route("/:id", get(get_plan));
@@ -66,8 +78,9 @@ impl AppRouter {
         let api_routes = Router::new()
             .nest("/sys", sys_pub_routes)
             .nest("/sys", sys_routes)
-            .nest("/permissions", permission_routes)
             .nest("/auth", auth_routes)
+            .nest("/roles", role_routes)
+            .nest("/permissions", permission_routes)
             .nest("/users", user_routes)
             .nest("/plans", plan_routes)
             .nest("/resources", resource_routes)

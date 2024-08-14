@@ -70,3 +70,19 @@ pub async fn get_resource(
         )),
     }
 }
+
+pub async fn update_resource(
+    Path(id): Path<uuid::Uuid>,
+    State(state): State<Arc<AppState>>,
+    Json(resource): Json<CreateResourceRequest>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let service = ResourceService::new(state.pool.clone());
+
+    match service.update_resource(id, resource).await {
+        Ok(resource) => Ok((StatusCode::OK, Json(resource))),
+        Err(e) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": e })),
+        )),
+    }
+}
