@@ -19,7 +19,6 @@ use super::{sys_service::SysResponse, user_service::{ResourceForUser, Subscripti
 pub struct Claims {
     pub sub: String,
     pub username: String,
-    pub plan_id: Option<uuid::Uuid>,
     pub iat: usize,
     pub exp: usize,
     pub is_sys: Option<bool>,
@@ -59,7 +58,6 @@ impl Claims {
             iat,
             exp,
             is_sys: None,
-            plan_id: user.subscription.as_ref().map(|s| s.plan_id),
             subscription: user.subscription,
             resources: user.resources,
         };
@@ -80,7 +78,6 @@ impl Claims {
             iat,
             exp,
             is_sys: Some(true),
-            plan_id: None,
             subscription: None,
             resources: vec![],
         };
