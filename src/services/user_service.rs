@@ -163,7 +163,10 @@ impl UserService {
             r#"
             SELECT * FROM resources WHERE plan_id = $1
             "#,
-            user_subscription.as_ref().map(|s| s.plan_id).unwrap_or_default()
+            user_subscription
+                .as_ref()
+                .map(|s| s.plan_id)
+                .unwrap_or_default()
         )
         .fetch_all(&self.pool)
         .await

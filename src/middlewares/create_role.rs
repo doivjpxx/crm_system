@@ -37,10 +37,10 @@ pub async fn allow_create_role(
                 let response = next.run(req).await;
                 Ok(response)
             } else {
-                return Err((
+                Err((
                     StatusCode::FORBIDDEN,
                     Json(serde_json::json!({ "error": "Forbidden" })),
-                ));
+                ))
             }
         }
         Err(e) => Err((

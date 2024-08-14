@@ -13,7 +13,10 @@ use axum_extra::{
 };
 use serde::{Deserialize, Serialize};
 
-use super::{sys_service::SysResponse, user_service::{ResourceForUser, SubscriptionForUser, UserWithSubscriptionResponse}};
+use super::{
+    sys_service::SysResponse,
+    user_service::{ResourceForUser, SubscriptionForUser, UserWithSubscriptionResponse},
+};
 
 #[derive(Deserialize, Serialize)]
 pub struct Claims {
@@ -23,7 +26,7 @@ pub struct Claims {
     pub exp: usize,
     pub is_sys: Option<bool>,
     pub subscription: Option<SubscriptionForUser>,
-    pub resources: Vec<ResourceForUser>
+    pub resources: Vec<ResourceForUser>,
 }
 
 pub struct Keys {
