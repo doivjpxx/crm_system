@@ -11,7 +11,9 @@ use crate::{
     app::AppState,
     services::{
         claim_service::Claims,
-        user_service::{ChangePasswordRequest, CreateUserRequest, LoginRequest, UpdateUserRequest, UserService},
+        user_service::{
+            ChangePasswordRequest, CreateUserRequest, LoginRequest, UpdateUserRequest, UserService,
+        },
     },
 };
 
