@@ -11,7 +11,7 @@ use crate::{
     app::AppState,
     services::{
         claim_service::Claims,
-        user_service::{ChangePasswordRequest, CreateUserRequest, LoginRequest, UserService},
+        user_service::{ChangePasswordRequest, CreateUserRequest, LoginRequest, UpdateUserRequest, UserService},
     },
 };
 
@@ -57,6 +57,44 @@ pub async fn get_current_user(
 
     match user_service.get_user(claims.username).await {
         Ok(user) => Ok((StatusCode::OK, Json(user))),
+        Err(e) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": e })),
+        )),
+    }
+}
+
+pub async fn register(
+    State(state): State<Arc<AppState>>,
+    Json(user): Json<CreateUserRequest>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let user_service = UserService::new(state.pool.clone());
+
+    match user_service.create_user(user).await {
+        Ok(_) => Ok((
+            StatusCode::CREATED,
+            Json(serde_json::json!({ "message": "User created" })),
+        )),
+        Err(e) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": e })),
+        )),
+    }
+}
+
+pub async fn update_user(
+    _: Claims,
+    Path(username): Path<String>,
+    State(state): State<Arc<AppState>>,
+    Json(user): Json<UpdateUserRequest>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let user_service = UserService::new(state.pool.clone());
+
+    match user_service.update_user(username, user).await {
+        Ok(_) => Ok((
+            StatusCode::OK,
+            Json(serde_json::json!({ "message": "User updated" })),
+        )),
         Err(e) => Err((
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(serde_json::json!({ "error": e })),

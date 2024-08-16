@@ -6,8 +6,15 @@ use super::{auth_service::AuthService, claim_service};
 pub struct CreateUserRequest {
     pub username: String,
     pub email: String,
-    pub name: String,
+    pub name: Option<String>,
     pub password: String,
+}
+
+#[derive(Deserialize)]
+pub struct UpdateUserRequest {
+    pub username: String,
+    pub email: String,
+    pub name: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -88,7 +95,7 @@ impl UserService {
             "#,
             user.username,
             user.email,
-            user.name,
+            user.name.unwrap_or_default(),
             password
         )
         .fetch_one(&self.pool)
@@ -205,6 +212,61 @@ impl UserService {
         })?;
 
         Ok(jwt)
+    }
+
+    pub async fn update_user(
+        &self,
+        username: String,
+        user: UpdateUserRequest,
+    ) -> Result<(), String> {
+        let exist_user = sqlx::query!(
+            r#"
+            SELECT * FROM users WHERE username = $1
+            "#,
+            username
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to get user: {:?}", e);
+            "Failed to get user".to_string()
+        })?;
+
+        if exist_user.username != user.username {
+            let exist_user = sqlx::query!(
+                r#"
+                SELECT * FROM users WHERE username = $1
+                "#,
+                user.username
+            )
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| {
+                tracing::error!("Failed to get user: {:?}", e);
+                "Failed to get user".to_string()
+            })?;
+
+            if exist_user.is_some() {
+                return Err("Username already exists".to_string());
+            }
+        }
+
+        sqlx::query!(
+            r#"
+            UPDATE users SET email = $1, name = $2 WHERE username = $3
+            "#,
+            user.email,
+            user.name.unwrap_or_default(),
+            user.username,
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to update user: {:?}", e);
+            "Failed to update user".to_string()
+        })?;
+
+        Ok(())
     }
 
     pub async fn change_password(

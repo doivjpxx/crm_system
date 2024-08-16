@@ -17,7 +17,9 @@ use crate::{
         roles::{create_role, get_roles_by_user_created, update_role},
         subscriptions::{create_subscription, get_subscription, get_subscription_by_user},
         sys::{get_sys, sys_login},
-        users::{change_password, create_user, get_current_user, get_user, login},
+        users::{
+            change_password, create_user, get_current_user, get_user, login, register, update_user,
+        },
     },
     middlewares::{auth::auth_middleware, create_role::allow_create_role, sys::sys_middleware},
 };
@@ -48,10 +50,12 @@ impl AppRouter {
         let user_routes = Router::new()
             .route("/profile/me", get(get_current_user))
             .route("/change-password", post(change_password))
-            .route("/:username", get(get_user))
+            .route("/:username", get(get_user).put(update_user))
             .layer(axum::middleware::from_fn(auth_middleware));
 
-        let auth_routes = Router::new().route("/login", post(login));
+        let auth_routes = Router::new()
+            .route("/login", post(login))
+            .route("/register", post(register));
 
         let role_routes = Router::new()
             .route(

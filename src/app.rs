@@ -23,7 +23,13 @@ pub async fn run_app(app_state: Arc<AppState>) {
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
 
     let cors = CorsLayer::new()
-        .allow_methods([Method::GET, Method::POST])
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::DELETE,
+            Method::OPTIONS,
+        ])
         .allow_origin(Any)
         .allow_headers([CONTENT_TYPE]);
 
