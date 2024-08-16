@@ -2,7 +2,10 @@ use std::{env, sync::Arc};
 
 use axum::{
     extract::{MatchedPath, Request},
-    http::{header::CONTENT_TYPE, Method},
+    http::{
+        header::{self},
+        Method,
+    },
 };
 use tower_http::{
     cors::{Any, CorsLayer},
@@ -23,7 +26,7 @@ pub async fn run_app(app_state: Arc<AppState>) {
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
 
     let cors = CorsLayer::new()
-        .allow_methods([
+        .allow_methods(vec![
             Method::GET,
             Method::POST,
             Method::PUT,
@@ -31,7 +34,13 @@ pub async fn run_app(app_state: Arc<AppState>) {
             Method::OPTIONS,
         ])
         .allow_origin(Any)
-        .allow_headers([CONTENT_TYPE]);
+        .allow_headers(vec![
+            header::ACCEPT,
+            header::ACCEPT_LANGUAGE,
+            header::AUTHORIZATION,
+            header::CONTENT_LANGUAGE,
+            header::CONTENT_TYPE,
+        ]);
 
     tracing::info!("CORS enabled");
 
