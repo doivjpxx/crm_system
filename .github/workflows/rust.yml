@@ -32,7 +32,7 @@ jobs:
       - name: Migrate database
         run: |
           cargo install sqlx-cli --no-default-features --features postgres
-          DATABASE_URL=postgres://postgres:postgres@localhost/crm_system_db sqlx migrate run
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
       - name: Prepare SQLx
         run: |
           SQLX_OFFLINE=true cargo sqlx prepare -- --bin crm_system

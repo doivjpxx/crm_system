@@ -23,7 +23,7 @@ jobs:
       - name: Migrate database
         run: |
           cargo install sqlx-cli --no-default-features --features postgres
-          DATABASE_URL=postgres://postgres:postgres@localhost/crm_system_db sqlx migrate run
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
 
       - name: Install nightly toolchain with clippy available
         uses: actions-rs/toolchain@v1
