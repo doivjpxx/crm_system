@@ -113,6 +113,26 @@ pub async fn login(
     match user_service.login(user.username, user.password).await {
         Ok(token) => Ok((
             StatusCode::OK,
+            Json(
+                serde_json::json!({ "token": token.0, "refresh_token": token.1, "type": "Bearer" }),
+            ),
+        )),
+        Err(e) => Err((
+            StatusCode::BAD_REQUEST,
+            Json(serde_json::json!({ "error": "Bad request", "message": e })),
+        )),
+    }
+}
+
+pub async fn refresh_token(
+    State(state): State<Arc<AppState>>,
+    refresh_token: String,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let user_service = UserService::new(state.pool.clone());
+
+    match user_service.refresh_token(refresh_token).await {
+        Ok(token) => Ok((
+            StatusCode::OK,
             Json(serde_json::json!({ "token": token, "type": "Bearer" })),
         )),
         Err(e) => Err((

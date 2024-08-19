@@ -131,7 +131,11 @@ impl UserService {
         })
     }
 
-    pub async fn login(&self, username: String, password: String) -> Result<String, String> {
+    pub async fn login(
+        &self,
+        username: String,
+        password: String,
+    ) -> Result<(String, String), String> {
         let user = sqlx::query!(
             r#"
             SELECT * FROM users WHERE username = $1
@@ -144,6 +148,34 @@ impl UserService {
             tracing::error!("Failed to get user: {:?}", e);
             "Failed to get user".to_string()
         })?;
+
+        let exist_token = sqlx::query!(
+            r#"
+            SELECT * FROM tokens WHERE user_id = $1
+            "#,
+            user.id
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to get token: {:?}", e);
+            "Failed to get token".to_string()
+        })?;
+
+        if exist_token.is_some() {
+            sqlx::query!(
+                r#"
+                DELETE FROM tokens WHERE user_id = $1
+                "#,
+                user.id
+            )
+            .execute(&self.pool)
+            .await
+            .map_err(|e| {
+                tracing::error!("Failed to delete token: {:?}", e);
+                "Failed to delete token".to_string()
+            })?;
+        }
 
         let matches = AuthService::new()
             .verify_password(password, user.password)
@@ -184,7 +216,116 @@ impl UserService {
 
         let jwt = claim_service::Claims::encode_jwt(UserWithSubscriptionResponse {
             id: user.id,
-            username: user.username,
+            username: user.username.clone(),
+            name: user.name,
+            email: user.email,
+            is_sys: None,
+            subscription: user_subscription.map(|s| SubscriptionForUser {
+                id: s.id,
+                plan_id: s.plan_id.unwrap_or_default(),
+                is_active: s.is_active.unwrap_or_default(),
+                start_date: s.start_date,
+                end_date: s.end_date,
+                trial_start_date: s.trial_start_date,
+                trial_end_date: s.trial_end_date,
+            }),
+            resources: resources
+                .iter()
+                .map(|r| ResourceForUser {
+                    id: r.id,
+                    name: r.name.clone(),
+                    max: r.max,
+                })
+                .collect(),
+        })
+        .map_err(|e| {
+            tracing::error!("Failed to encode jwt: {:?}", e);
+            "Failed to encode jwt".to_string()
+        })?;
+
+        let refresh_token =
+            claim_service::Claims::encode_refresh_jwt(user.username).map_err(|e| {
+                tracing::error!("Failed to encode refresh jwt: {:?}", e);
+                "Failed to encode refresh jwt".to_string()
+            })?;
+
+        sqlx::query!(
+            r#"
+            INSERT INTO tokens (user_id, token)
+            VALUES ($1, $2)
+            "#,
+            user.id,
+            refresh_token
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to insert token: {:?}", e);
+            "Failed to insert token".to_string()
+        })?;
+
+        Ok((jwt, refresh_token))
+    }
+
+    pub async fn refresh_token(&self, refresh_token: String) -> Result<String, String> {
+        let token = sqlx::query!(
+            r#"
+            SELECT * FROM tokens WHERE token = $1
+            "#,
+            refresh_token
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to get token: {:?}", e);
+            "Failed to get token".to_string()
+        })?;
+
+        let user = sqlx::query!(
+            r#"
+            SELECT * FROM users WHERE id = $1
+            "#,
+            token.user_id
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to get user: {:?}", e);
+            "Failed to get user".to_string()
+        })?;
+
+        let user_subscription = sqlx::query!(
+            r#"
+            SELECT * FROM subscriptions WHERE user_id = $1
+            "#,
+            user.id
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to get user subscription: {:?}", e);
+            "Failed to get user subscription".to_string()
+        })?;
+
+        let resources = sqlx::query!(
+            r#"
+            SELECT * FROM resources WHERE plan_id = $1
+            "#,
+            user_subscription
+                .as_ref()
+                .map(|s| s.plan_id)
+                .unwrap_or_default()
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to get resources: {:?}", e);
+            "Failed to get resources".to_string()
+        })?;
+
+        let jwt = claim_service::Claims::encode_jwt(UserWithSubscriptionResponse {
+            id: user.id,
+            username: user.username.clone(),
             name: user.name,
             email: user.email,
             is_sys: None,

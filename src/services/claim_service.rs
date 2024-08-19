@@ -29,6 +29,13 @@ pub struct Claims {
     pub resources: Vec<ResourceForUser>,
 }
 
+#[derive(Deserialize, Serialize)]
+pub struct RefreshClaims {
+    pub username: String,
+    pub iat: usize,
+    pub exp: usize,
+}
+
 pub struct Keys {
     pub encoding: EncodingKey,
     pub decoding: DecodingKey,
@@ -45,6 +52,11 @@ impl Keys {
 
 static KEYS: Lazy<Keys> = Lazy::new(|| {
     let secret = std::env::var("SECRET_KEY").expect("SECRET_KEY must be set");
+    Keys::new(secret.as_bytes())
+});
+
+static REFRESH_KEYS: Lazy<Keys> = Lazy::new(|| {
+    let secret = std::env::var("REFRESH_SECRET_KEY").expect("REFRESH_SECRET_KEY must be set");
     Keys::new(secret.as_bytes())
 });
 
@@ -66,6 +78,16 @@ impl Claims {
         };
 
         encode(&Header::default(), &claims, &KEYS.encoding)
+            .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
+    }
+
+    pub fn encode_refresh_jwt(username: String) -> Result<String, (StatusCode, String)> {
+        let now = chrono::Utc::now();
+        let iat = now.timestamp() as usize;
+        let exp = now.timestamp() as usize + 60 * 60 * 24 * 7;
+        let claims = RefreshClaims { username, iat, exp };
+
+        encode(&Header::default(), &claims, &REFRESH_KEYS.encoding)
             .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))
     }
 
