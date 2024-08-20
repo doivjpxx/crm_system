@@ -36,6 +36,20 @@ pub struct UserResponse {
     pub name: String,
     pub email: String,
     pub is_sys: Option<bool>,
+    pub created_at: chrono::NaiveDateTime,
+}
+
+impl UserResponse {
+    pub fn new(id: uuid::Uuid, username: String, name: String, email: String) -> Self {
+        Self {
+            id,
+            username,
+            name,
+            email,
+            is_sys: None,
+            created_at: chrono::Utc::now().naive_utc(),
+        }
+    }
 }
 
 #[derive(Serialize)]
@@ -74,6 +88,32 @@ pub struct UserService {
 impl UserService {
     pub fn new(pool: sqlx::PgPool) -> Self {
         Self { pool }
+    }
+
+    pub async fn get_users(&self) -> Result<Vec<UserResponse>, String> {
+        let users = sqlx::query!(
+            r#"
+            SELECT * FROM users
+            "#
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to get users: {:?}", e);
+            "Failed to get users".to_string()
+        })?;
+
+        Ok(users
+            .iter()
+            .map(|user| UserResponse {
+                id: user.id,
+                username: user.username.clone(),
+                name: user.name.clone(),
+                email: user.email.clone(),
+                is_sys: None,
+                created_at: user.created_at.unwrap(),
+            })
+            .collect())
     }
 
     pub async fn create_user(&self, user: CreateUserRequest) -> Result<(), String> {
@@ -127,6 +167,7 @@ impl UserService {
             username: user.username,
             name: user.name,
             email: user.email,
+            created_at: user.created_at.unwrap(),
             is_sys: None,
         })
     }

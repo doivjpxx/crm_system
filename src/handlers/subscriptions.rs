@@ -33,6 +33,20 @@ pub async fn create_subscription(
     }
 }
 
+pub async fn get_subscriptions(
+    State(state): State<Arc<AppState>>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let sub_service = SubscriptionService::new(state.pool.clone());
+
+    match sub_service.get_subscriptions().await {
+        Ok(subs) => Ok((StatusCode::OK, Json(subs))),
+        Err(e) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!(e)),
+        )),
+    }
+}
+
 pub async fn get_subscription(
     Path(id): Path<uuid::Uuid>,
     State(state): State<Arc<AppState>>,

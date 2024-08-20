@@ -35,6 +35,20 @@ pub async fn create_user(
     }
 }
 
+pub async fn get_users(
+    State(state): State<Arc<AppState>>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let user_service = UserService::new(state.pool.clone());
+
+    match user_service.get_users().await {
+        Ok(users) => Ok((StatusCode::OK, Json(users))),
+        Err(e) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!(e)),
+        )),
+    }
+}
+
 pub async fn get_user(
     _: Claims,
     Path(username): Path<String>,

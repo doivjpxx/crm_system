@@ -23,6 +23,30 @@ pub struct PlanResponse {
     pub created_at: Option<NaiveDateTime>,
 }
 
+impl PlanResponse {
+    pub fn new(
+        id: uuid::Uuid,
+        name: String,
+        description: String,
+        price: i64,
+        is_active: Option<bool>,
+        tags: Option<Vec<String>>,
+        trial_days: Option<i32>,
+        created_at: Option<NaiveDateTime>,
+    ) -> Self {
+        Self {
+            id,
+            name,
+            description,
+            price,
+            is_active,
+            tags,
+            trial_days,
+            created_at,
+        }
+    }
+}
+
 pub struct PlanService {
     pub pool: sqlx::PgPool,
 }

@@ -15,11 +15,13 @@ use crate::{
             create_resource, get_resource, get_resources, get_resources_by_plan, update_resource,
         },
         roles::{create_role, get_roles_by_user_created, update_role},
-        subscriptions::{create_subscription, get_subscription, get_subscription_by_user},
+        subscriptions::{
+            create_subscription, get_subscription, get_subscription_by_user, get_subscriptions,
+        },
         sys::{get_sys, sys_login},
         users::{
-            change_password, create_user, get_current_user, get_user, login, refresh_token,
-            register, update_user,
+            change_password, create_user, get_current_user, get_user, get_users, login,
+            refresh_token, register, update_user,
         },
     },
     middlewares::{auth::auth_middleware, create_role::allow_create_role, sys::sys_middleware},
@@ -38,10 +40,13 @@ impl AppRouter {
     pub fn create(&self) -> Router {
         let sys_pub_routes = Router::new().route("/login", post(sys_login));
         let sys_routes = Router::new()
-            .route("/users", post(create_user))
+            .route("/users", post(create_user).get(get_users))
             .route("/me", get(get_sys))
             .route("/plans", post(create_plan).put(update_plan))
-            .route("/subscriptions", post(create_subscription))
+            .route(
+                "/subscriptions",
+                post(create_subscription).get(get_subscriptions),
+            )
             .route("/resources", post(create_resource))
             .route("/resources/:id", put(update_resource))
             .layer(axum::middleware::from_fn(sys_middleware));
