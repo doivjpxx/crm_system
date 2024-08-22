@@ -1,5 +1,6 @@
 pub mod auth_service;
 pub mod claim_service;
+pub mod payment_service;
 pub mod permission_service;
 pub mod plan_service;
 pub mod resource_service;
