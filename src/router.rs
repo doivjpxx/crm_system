@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::{
-    routing::{get, post, put},
+    routing::{get, patch, post, put},
     Router,
 };
 
@@ -9,6 +9,7 @@ use crate::{
     app::AppState,
     handlers::{
         health::health,
+        payment::make_payment,
         permissions::get_permissions,
         plans::{create_plan, get_plan, get_plans, update_plan},
         resources::{
@@ -16,7 +17,8 @@ use crate::{
         },
         roles::{create_role, get_roles_by_user_created, update_role},
         subscriptions::{
-            create_subscription, get_subscription, get_subscription_by_user, get_subscriptions,
+            activate_subscription, create_subscription, get_subscription, get_subscription_by_user,
+            get_subscriptions,
         },
         sys::{get_sys, sys_login},
         users::{
@@ -43,10 +45,8 @@ impl AppRouter {
             .route("/users", post(create_user).get(get_users))
             .route("/me", get(get_sys))
             .route("/plans", post(create_plan).put(update_plan))
-            .route(
-                "/subscriptions",
-                post(create_subscription).get(get_subscriptions),
-            )
+            .route("/subscriptions", get(get_subscriptions))
+            .route("/subscriptions/:id", patch(activate_subscription))
             .route("/resources", post(create_resource))
             .route("/resources/:id", put(update_resource))
             .layer(axum::middleware::from_fn(sys_middleware));
@@ -85,8 +85,13 @@ impl AppRouter {
             .route("/plan/:plan_id", get(get_resources_by_plan));
 
         let subscription_routes = Router::new()
+            .route("/", post(create_subscription))
             .route("/:id", get(get_subscription))
             .route("/user/:username", get(get_subscription_by_user))
+            .layer(axum::middleware::from_fn(auth_middleware));
+
+        let payment_routes = Router::new()
+            .route("/", post(make_payment))
             .layer(axum::middleware::from_fn(auth_middleware));
 
         let api_routes = Router::new()
@@ -98,7 +103,8 @@ impl AppRouter {
             .nest("/users", user_routes)
             .nest("/plans", plan_routes)
             .nest("/resources", resource_routes)
-            .nest("/subscriptions", subscription_routes);
+            .nest("/subscriptions", subscription_routes)
+            .nest("/payments", payment_routes);
 
         Router::new()
             .route("/health", get(health))

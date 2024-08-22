@@ -40,6 +40,25 @@ impl SubscriptionService {
         Self { pool }
     }
 
+    pub async fn activate_subscription(&self, subscription_id: uuid::Uuid) -> Result<(), String> {
+        sqlx::query!(
+            r#"
+            UPDATE subscriptions
+            SET is_active = true
+            WHERE id = $1
+            "#,
+            subscription_id,
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to set active subscription: {:?}", e);
+            "Failed to set active subscription".to_string()
+        })?;
+
+        Ok(())
+    }
+
     pub async fn create_subscription(
         &self,
         subscription: CreateSubscriptionRequest,
@@ -61,7 +80,7 @@ impl SubscriptionService {
             "#,
             subscription.user_id,
             subscription.plan_id,
-            true,
+            false,
             start_date,
             end_date
         )

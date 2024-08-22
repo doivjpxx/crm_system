@@ -1,4 +1,5 @@
 pub mod health;
+pub mod payment;
 pub mod permissions;
 pub mod plans;
 pub mod resources;
