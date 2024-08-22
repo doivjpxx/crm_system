@@ -40,10 +40,7 @@ impl SubscriptionService {
         Self { pool }
     }
 
-    pub async fn activate_subscription(
-        &self,
-        subscription_id: uuid::Uuid,
-    ) -> Result<(), String> {
+    pub async fn activate_subscription(&self, subscription_id: uuid::Uuid) -> Result<(), String> {
         sqlx::query!(
             r#"
             UPDATE subscriptions
