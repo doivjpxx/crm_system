@@ -62,7 +62,7 @@ impl SubscriptionService {
     pub async fn create_subscription(
         &self,
         subscription: CreateSubscriptionRequest,
-    ) -> Result<(), String> {
+    ) -> Result<SubscriptionResponse, String> {
         let plan_service = PlanService::new(self.pool.clone());
 
         let plan = plan_service.get_plan(subscription.plan_id).await?;
@@ -73,10 +73,11 @@ impl SubscriptionService {
             None => start_date + chrono::Duration::days(30),
         };
 
-        sqlx::query!(
+        let sub = sqlx::query!(
             r#"
             INSERT INTO subscriptions (user_id, plan_id, is_active, start_date, end_date)
             VALUES ($1, $2, $3, $4, $5)
+            RETURNING id, user_id, plan_id, start_date, end_date
             "#,
             subscription.user_id,
             subscription.plan_id,
@@ -84,14 +85,20 @@ impl SubscriptionService {
             start_date,
             end_date
         )
-        .execute(&self.pool)
+        .fetch_one(&self.pool)
         .await
         .map_err(|e| {
             tracing::error!("Failed to create subscription: {:?}", e);
             "Failed to create subscription".to_string()
         })?;
 
-        Ok(())
+        Ok(SubscriptionResponse {
+            id: sub.id,
+            user_id: sub.user_id,
+            plan_id: sub.plan_id,
+            start_date: sub.start_date,
+            end_date: sub.end_date,
+        })
     }
 
     pub async fn get_subscriptions(&self) -> Result<Vec<SubscriptionForSysResponse>, String> {
