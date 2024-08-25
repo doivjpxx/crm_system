@@ -9,7 +9,7 @@ use crate::{
     app::AppState,
     handlers::{
         health::health,
-        payment::make_payment,
+        payment::{get_payments_for_sys, make_payment},
         permissions::get_permissions,
         plans::{create_plan, get_plan, get_plans, update_plan},
         resources::{
@@ -45,6 +45,7 @@ impl AppRouter {
             .route("/users", post(create_user).get(get_users))
             .route("/me", get(get_sys))
             .route("/plans", post(create_plan).put(update_plan))
+            .route("/payments", get(get_payments_for_sys))
             .route("/subscriptions", get(get_subscriptions))
             .route("/subscriptions/:id", patch(activate_subscription))
             .route("/resources", post(create_resource))

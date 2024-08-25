@@ -16,7 +16,24 @@ pub async fn make_payment(
     match payment_service.make_payment(payment).await {
         Ok(payment) => Ok((
             StatusCode::CREATED,
-            Json(serde_json::json!({ "message": "Payment created", "data": payment })),
+            Json(payment),
+        )),
+        Err(e) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": e })),
+        )),
+    }
+}
+
+pub async fn get_payments_for_sys(
+    State(state): State<Arc<AppState>>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let payment_service = PaymentService::new(state.pool.clone());
+
+    match payment_service.get_payments().await {
+        Ok(payments) => Ok((
+            StatusCode::OK,
+            Json(payments),
         )),
         Err(e) => Err((
             StatusCode::INTERNAL_SERVER_ERROR,

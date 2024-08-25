@@ -18,6 +18,7 @@ pub struct SubscriptionResponse {
     pub plan_id: Option<uuid::Uuid>,
     pub start_date: Option<chrono::NaiveDateTime>,
     pub end_date: Option<chrono::NaiveDateTime>,
+    pub is_active: bool,
 }
 
 #[derive(Serialize)]
@@ -98,6 +99,7 @@ impl SubscriptionService {
             plan_id: sub.plan_id,
             start_date: sub.start_date,
             end_date: sub.end_date,
+            is_active: false,
         })
     }
 
@@ -148,7 +150,7 @@ impl SubscriptionService {
     pub async fn get_subscription(&self, id: uuid::Uuid) -> Result<SubscriptionResponse, String> {
         let subscription = sqlx::query!(
             r#"
-            SELECT id, user_id, plan_id, start_date, end_date
+            SELECT id, user_id, plan_id, start_date, end_date, is_active
             FROM subscriptions
             WHERE id = $1
             "#,
@@ -167,6 +169,7 @@ impl SubscriptionService {
             plan_id: subscription.plan_id,
             start_date: subscription.start_date,
             end_date: subscription.end_date,
+            is_active: subscription.is_active.unwrap_or_default(),
         })
     }
 
@@ -180,7 +183,7 @@ impl SubscriptionService {
 
         let subscriptions = sqlx::query!(
             r#"
-            SELECT id, user_id, plan_id, start_date, end_date
+            SELECT id, user_id, plan_id, start_date, end_date, is_active
             FROM subscriptions
             WHERE user_id = $1
             "#,
@@ -201,6 +204,7 @@ impl SubscriptionService {
                 plan_id: subscription.plan_id,
                 start_date: subscription.start_date,
                 end_date: subscription.end_date,
+                is_active: subscription.is_active.unwrap_or_default(),
             })
             .collect())
     }
