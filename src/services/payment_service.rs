@@ -102,7 +102,7 @@ impl PaymentService {
                     plan_id: payment.plan_id,
                     start_date: payment.start_date,
                     end_date: payment.end_date,
-                    is_active: payment.is_active.unwrap_or_default()
+                    is_active: payment.is_active.unwrap_or_default(),
                 },
                 plan: super::plan_service::PlanResponse {
                     id: payment.plan_id.unwrap(),
