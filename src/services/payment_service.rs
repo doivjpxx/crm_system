@@ -72,7 +72,7 @@ impl PaymentService {
     pub async fn get_payments(&self) -> Result<Vec<PaymentForSysResponse>, String> {
         let payments = sqlx::query!(
             r#"
-            SELECT p.id, p.subscription_id, p.amount, p.payment_date, p.payment_method, s.user_id, s.plan_id, s.start_date, s.end_date, s.is_active, pl.name, pl.price, pl.description, pl.trial_days, u.username, u.name as user_name, u.email, u.id as user_id
+            SELECT p.id, p.subscription_id, p.amount, p.payment_date, p.payment_method, s.user_id, s.plan_id, s.start_date, s.end_date, s.is_active, pl.name, pl.price, pl.description, pl.trial_days, u.username, u.name as user_name, u.email
             FROM payments as p
             INNER JOIN subscriptions as s ON p.subscription_id = s.id
             INNER JOIN plans as pl ON s.plan_id = pl.id
