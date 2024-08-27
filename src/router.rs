@@ -17,8 +17,8 @@ use crate::{
         },
         roles::{create_role, get_roles_by_user_created, update_role},
         subscriptions::{
-            activate_subscription, create_subscription, get_subscription, get_subscription_by_user,
-            get_subscriptions,
+            activate_subscription, create_subscription, deactivate_subscription, get_subscription,
+            get_subscription_by_user, get_subscriptions,
         },
         sys::{get_sys, sys_login},
         users::{
@@ -48,6 +48,10 @@ impl AppRouter {
             .route("/payments", get(get_payments_for_sys))
             .route("/subscriptions", get(get_subscriptions))
             .route("/subscriptions/:id", patch(activate_subscription))
+            .route(
+                "/subscriptions/:id/deactivate",
+                patch(deactivate_subscription),
+            )
             .route("/resources", post(create_resource))
             .route("/resources/:id", put(update_resource))
             .layer(axum::middleware::from_fn(sys_middleware));

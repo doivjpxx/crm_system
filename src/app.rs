@@ -30,6 +30,7 @@ pub async fn run_app(app_state: Arc<AppState>) {
             Method::GET,
             Method::POST,
             Method::PUT,
+            Method::PATCH,
             Method::DELETE,
             Method::OPTIONS,
         ])
