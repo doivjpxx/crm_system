@@ -18,6 +18,7 @@ pub struct SubscriptionResponse {
     pub plan_id: Option<uuid::Uuid>,
     pub start_date: Option<chrono::NaiveDateTime>,
     pub end_date: Option<chrono::NaiveDateTime>,
+    pub is_active: bool,
 }
 
 #[derive(Serialize)]
@@ -59,10 +60,29 @@ impl SubscriptionService {
         Ok(())
     }
 
+    pub async fn deactivate_subscription(&self, subscription_id: uuid::Uuid) -> Result<(), String> {
+        sqlx::query!(
+            r#"
+            UPDATE subscriptions
+            SET is_active = false
+            WHERE id = $1
+            "#,
+            subscription_id,
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to set active subscription: {:?}", e);
+            "Failed to set active subscription".to_string()
+        })?;
+
+        Ok(())
+    }
+
     pub async fn create_subscription(
         &self,
         subscription: CreateSubscriptionRequest,
-    ) -> Result<(), String> {
+    ) -> Result<SubscriptionResponse, String> {
         let plan_service = PlanService::new(self.pool.clone());
 
         let plan = plan_service.get_plan(subscription.plan_id).await?;
@@ -73,10 +93,11 @@ impl SubscriptionService {
             None => start_date + chrono::Duration::days(30),
         };
 
-        sqlx::query!(
+        let sub = sqlx::query!(
             r#"
             INSERT INTO subscriptions (user_id, plan_id, is_active, start_date, end_date)
             VALUES ($1, $2, $3, $4, $5)
+            RETURNING id, user_id, plan_id, start_date, end_date
             "#,
             subscription.user_id,
             subscription.plan_id,
@@ -84,14 +105,21 @@ impl SubscriptionService {
             start_date,
             end_date
         )
-        .execute(&self.pool)
+        .fetch_one(&self.pool)
         .await
         .map_err(|e| {
             tracing::error!("Failed to create subscription: {:?}", e);
             "Failed to create subscription".to_string()
         })?;
 
-        Ok(())
+        Ok(SubscriptionResponse {
+            id: sub.id,
+            user_id: sub.user_id,
+            plan_id: sub.plan_id,
+            start_date: sub.start_date,
+            end_date: sub.end_date,
+            is_active: false,
+        })
     }
 
     pub async fn get_subscriptions(&self) -> Result<Vec<SubscriptionForSysResponse>, String> {
@@ -141,7 +169,7 @@ impl SubscriptionService {
     pub async fn get_subscription(&self, id: uuid::Uuid) -> Result<SubscriptionResponse, String> {
         let subscription = sqlx::query!(
             r#"
-            SELECT id, user_id, plan_id, start_date, end_date
+            SELECT id, user_id, plan_id, start_date, end_date, is_active
             FROM subscriptions
             WHERE id = $1
             "#,
@@ -160,6 +188,7 @@ impl SubscriptionService {
             plan_id: subscription.plan_id,
             start_date: subscription.start_date,
             end_date: subscription.end_date,
+            is_active: subscription.is_active.unwrap_or_default(),
         })
     }
 
@@ -173,7 +202,7 @@ impl SubscriptionService {
 
         let subscriptions = sqlx::query!(
             r#"
-            SELECT id, user_id, plan_id, start_date, end_date
+            SELECT id, user_id, plan_id, start_date, end_date, is_active
             FROM subscriptions
             WHERE user_id = $1
             "#,
@@ -194,6 +223,7 @@ impl SubscriptionService {
                 plan_id: subscription.plan_id,
                 start_date: subscription.start_date,
                 end_date: subscription.end_date,
+                is_active: subscription.is_active.unwrap_or_default(),
             })
             .collect())
     }

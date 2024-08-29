@@ -20,6 +20,7 @@ use super::{
 
 #[derive(Deserialize, Serialize)]
 pub struct Claims {
+    pub id: uuid::Uuid,
     pub sub: String,
     pub username: String,
     pub iat: usize,
@@ -68,6 +69,7 @@ impl Claims {
         let iat = now.timestamp() as usize;
         let exp = now.timestamp() as usize + 60 * 60;
         let claims = Claims {
+            id: user.id,
             sub: user.email.clone(),
             username: user.username.clone(),
             iat,
@@ -98,6 +100,7 @@ impl Claims {
         let iat = now.timestamp() as usize;
         let exp = now.timestamp() as usize + 60 * 60;
         let claims = Claims {
+            id: sys.id,
             sub: sys.username.clone(),
             username: sys.username.clone(),
             iat,
