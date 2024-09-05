@@ -7,5 +7,5 @@ pub mod resource_service;
 pub mod role_service;
 pub mod subscription_service;
 pub mod sys_service;
-pub mod user_service;
 pub mod user_group_service;
+pub mod user_service;
