@@ -6,3 +6,4 @@ pub mod role_model;
 pub mod subscription_model;
 pub mod token_model;
 pub mod user_model;
+pub mod user_group_model;

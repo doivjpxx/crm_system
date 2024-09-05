@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     plan_service::{PlanResponse, PlanService},
-    user_service::{UserResponse, UserService},
+    user_service::{UserResponse, UserService, UserServiceImpl},
 };
 
 #[derive(Deserialize)]

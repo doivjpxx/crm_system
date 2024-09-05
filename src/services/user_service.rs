@@ -85,12 +85,41 @@ pub struct UserService {
     pub pool: sqlx::PgPool,
 }
 
-impl UserService {
-    pub fn new(pool: sqlx::PgPool) -> Self {
+pub trait UserServiceImpl {
+    fn new(pool: sqlx::PgPool) -> Self;
+
+    async fn get_users(&self) -> Result<Vec<UserResponse>, String>;
+
+    async fn create_user(&self, user: CreateUserRequest) -> Result<(), String>;
+
+    async fn get_user(&self, username: String) -> Result<UserResponse, String>;
+
+    async fn login(&self, username: String, password: String) -> Result<(String, String), String>;
+
+    async fn refresh_token(&self, refresh_token: String) -> Result<String, String>;
+
+    async fn update_user(&self, username: String, user: UpdateUserRequest) -> Result<(), String>;
+
+    async fn change_password(
+        &self,
+        username: String,
+        old_password: String,
+        new_password: String,
+    ) -> Result<(), String>;
+
+    async fn create_child_user(
+        &self,
+        username: String,
+        child_username: String,
+    ) -> Result<(), String>;
+}
+
+impl UserServiceImpl for UserService {
+    fn new(pool: sqlx::PgPool) -> Self {
         Self { pool }
     }
 
-    pub async fn get_users(&self) -> Result<Vec<UserResponse>, String> {
+    async fn get_users(&self) -> Result<Vec<UserResponse>, String> {
         let users = sqlx::query!(
             r#"
             SELECT * FROM users
@@ -116,7 +145,7 @@ impl UserService {
             .collect())
     }
 
-    pub async fn create_user(&self, user: CreateUserRequest) -> Result<(), String> {
+    async fn create_user(&self, user: CreateUserRequest) -> Result<(), String> {
         let password = AuthService::new().hash_password(user.password).await;
 
         let password = match password {
@@ -148,7 +177,7 @@ impl UserService {
         Ok(())
     }
 
-    pub async fn get_user(&self, username: String) -> Result<UserResponse, String> {
+    async fn get_user(&self, username: String) -> Result<UserResponse, String> {
         let user = sqlx::query!(
             r#"
             SELECT * FROM users WHERE username = $1
@@ -172,11 +201,7 @@ impl UserService {
         })
     }
 
-    pub async fn login(
-        &self,
-        username: String,
-        password: String,
-    ) -> Result<(String, String), String> {
+    async fn login(&self, username: String, password: String) -> Result<(String, String), String> {
         let user = sqlx::query!(
             r#"
             SELECT * FROM users WHERE username = $1
@@ -308,7 +333,7 @@ impl UserService {
         Ok((jwt, refresh_token))
     }
 
-    pub async fn refresh_token(&self, refresh_token: String) -> Result<String, String> {
+    async fn refresh_token(&self, refresh_token: String) -> Result<String, String> {
         let token = sqlx::query!(
             r#"
             SELECT * FROM tokens WHERE token = $1
@@ -396,11 +421,7 @@ impl UserService {
         Ok(jwt)
     }
 
-    pub async fn update_user(
-        &self,
-        username: String,
-        user: UpdateUserRequest,
-    ) -> Result<(), String> {
+    async fn update_user(&self, username: String, user: UpdateUserRequest) -> Result<(), String> {
         let exist_user = sqlx::query!(
             r#"
             SELECT * FROM users WHERE username = $1
@@ -451,7 +472,7 @@ impl UserService {
         Ok(())
     }
 
-    pub async fn change_password(
+    async fn change_password(
         &self,
         username: String,
         old_password: String,
@@ -500,6 +521,118 @@ impl UserService {
         .map_err(|e| {
             tracing::error!("Failed to update password: {:?}", e);
             "Failed to update password".to_string()
+        })?;
+
+        Ok(())
+    }
+
+    async fn create_child_user(
+        &self,
+        username: String,
+        child_username: String,
+    ) -> Result<(), String> {
+        let user = sqlx::query!(
+            r#"
+            SELECT * FROM users WHERE username = $1
+            "#,
+            username
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to get user: {:?}", e);
+            "Failed to get user".to_string()
+        })?;
+
+        let child_user = sqlx::query!(
+            r#"
+            SELECT * FROM users WHERE username = $1
+            "#,
+            child_username
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to get child user: {:?}", e);
+            "Failed to get child user".to_string()
+        })?;
+
+        let user_subscription = sqlx::query!(
+            r#"
+            SELECT * FROM subscriptions WHERE user_id = $1
+            "#,
+            user.id
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to get user subscription: {:?}", e);
+            "Failed to get user subscription".to_string()
+        })?;
+
+        let child_user_subscription = sqlx::query!(
+            r#"
+            SELECT * FROM subscriptions WHERE user_id = $1
+            "#,
+            child_user.id
+        )
+        .fetch_optional(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to get child user subscription: {:?}", e);
+            "Failed to get child user subscription".to_string()
+        })?;
+
+        if child_user_subscription.is_some() {
+            if child_user_subscription.unwrap().is_active.unwrap() {
+                return Err("Child user already has an active subscription".to_string());
+            }
+
+            sqlx::query!(
+                r#"
+                DELETE FROM subscriptions WHERE user_id = $1
+                "#,
+                child_user.id
+            )
+            .execute(&self.pool)
+            .await
+            .map_err(|e| {
+                tracing::error!("Failed to delete child user subscription: {:?}", e);
+                "Failed to delete child user subscription".to_string()
+            })?;
+        }
+
+        sqlx::query!(
+            r#"
+            INSERT INTO subscriptions (user_id, plan_id, is_active, start_date, end_date)
+            VALUES ($1, $2, $3, $4, $5)
+            "#,
+            child_user.id,
+            user_subscription.plan_id,
+            user_subscription.is_active,
+            user_subscription.start_date,
+            user_subscription.end_date
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to create child user subscription: {:?}", e);
+            "Failed to create child user subscription".to_string()
+        })?;
+
+        sqlx::query!(
+            r#"
+            INSERT INTO user_groups (parent_id, user_id)
+            VALUES ($1, $2)
+            "#,
+            user.id,
+            child_user.id
+        )
+        .execute(&self.pool)
+        .await
+        .map_err(|e| {
+            tracing::error!("Failed to create child user group: {:?}", e);
+            "Failed to create child user group".to_string()
         })?;
 
         Ok(())

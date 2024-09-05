@@ -11,8 +11,10 @@ use crate::{
     app::AppState,
     services::{
         claim_service::Claims,
+        user_group_service::{UserGroupService, UserGroupServiceImpl},
         user_service::{
             ChangePasswordRequest, CreateUserRequest, LoginRequest, UpdateUserRequest, UserService,
+            UserServiceImpl,
         },
     },
 };
@@ -174,6 +176,42 @@ pub async fn change_password(
         Err(e) => Err((
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(serde_json::json!({ "error": e })),
+        )),
+    }
+}
+
+pub async fn create_child_user(
+    _: Claims,
+    Path(username): Path<String>,
+    State(state): State<Arc<AppState>>,
+    Json(user): Json<String>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let user_service = UserService::new(state.pool.clone());
+
+    match user_service.create_child_user(username, user).await {
+        Ok(_) => Ok((
+            StatusCode::CREATED,
+            Json(serde_json::json!({ "message": "User created" })),
+        )),
+        Err(e) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({ "error": e })),
+        )),
+    }
+}
+
+pub async fn get_user_groups(
+    _: Claims,
+    Path(parent_id): Path<uuid::Uuid>,
+    State(state): State<Arc<AppState>>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let user_service = UserGroupService::new(state.pool.clone());
+
+    match user_service.get_user_groups_by_parent_id(parent_id).await {
+        Ok(user_groups) => Ok((StatusCode::OK, Json(user_groups))),
+        Err(e) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!(e)),
         )),
     }
 }
