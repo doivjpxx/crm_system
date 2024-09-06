@@ -9,13 +9,11 @@ use axum::{
 
 use crate::{
     app::AppState,
+    dtos::user_dtos::{ChangePasswordRequest, CreateUserRequest, LoginRequest, UpdateUserRequest},
     services::{
         claim_service::Claims,
         user_group_service::{UserGroupService, UserGroupServiceImpl},
-        user_service::{
-            ChangePasswordRequest, CreateUserRequest, LoginRequest, UpdateUserRequest, UserService,
-            UserServiceImpl,
-        },
+        user_service::{UserService, UserServiceImpl},
     },
 };
 

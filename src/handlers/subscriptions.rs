@@ -9,11 +9,10 @@ use axum::{
 
 use crate::{
     app::AppState,
+    dtos::subscription_dtos::CreateSubscriptionRequest,
     services::{
         claim_service::Claims,
-        subscription_service::{
-            CreateSubscriptionRequest, SubscriptionService, SubscriptionServiceImpl,
-        },
+        subscription_service::{SubscriptionService, SubscriptionServiceImpl},
     },
 };
 

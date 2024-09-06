@@ -1,36 +1,15 @@
-use serde::{Deserialize, Serialize};
-
-use super::{
-    plan_service::{PlanResponse, PlanService, PlanServiceImpl},
-    user_service::{UserResponse, UserService, UserServiceImpl},
+use crate::dtos::{
+    plan_dtos::PlanResponse,
+    subscription_dtos::{
+        CreateSubscriptionRequest, SubscriptionForSysResponse, SubscriptionResponse,
+    },
+    user_dtos::UserResponse,
 };
 
-#[derive(Deserialize)]
-pub struct CreateSubscriptionRequest {
-    pub user_id: uuid::Uuid,
-    pub plan_id: uuid::Uuid,
-}
-
-#[derive(Serialize)]
-pub struct SubscriptionResponse {
-    pub id: uuid::Uuid,
-    pub user_id: Option<uuid::Uuid>,
-    pub plan_id: Option<uuid::Uuid>,
-    pub start_date: Option<chrono::NaiveDateTime>,
-    pub end_date: Option<chrono::NaiveDateTime>,
-    pub is_active: bool,
-}
-
-#[derive(Serialize)]
-pub struct SubscriptionForSysResponse {
-    pub id: uuid::Uuid,
-    pub user_id: Option<uuid::Uuid>,
-    pub plan_id: Option<uuid::Uuid>,
-    pub start_date: Option<chrono::NaiveDateTime>,
-    pub end_date: Option<chrono::NaiveDateTime>,
-    pub user: super::user_service::UserResponse,
-    pub plan: super::plan_service::PlanResponse,
-}
+use super::{
+    plan_service::{PlanService, PlanServiceImpl},
+    user_service::{UserService, UserServiceImpl},
+};
 
 pub struct SubscriptionService {
     pub pool: sqlx::PgPool,
@@ -220,7 +199,7 @@ impl SubscriptionServiceImpl for SubscriptionService {
     ) -> Result<Vec<SubscriptionResponse>, String> {
         let user_service = UserService::new(self.pool.clone());
 
-        let user: super::user_service::UserResponse = user_service.get_user(username).await?;
+        let user: UserResponse = user_service.get_user(username).await?;
 
         let subscriptions = sqlx::query!(
             r#"

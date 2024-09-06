@@ -3,8 +3,8 @@ use std::sync::Arc;
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 
 use crate::{
-    app::AppState,
-    services::payment_service::{CreatePaymentRequest, PaymentService},
+    app::AppState, dtos::payment_dtos::CreatePaymentRequest,
+    services::payment_service::PaymentService,
 };
 
 pub async fn make_payment(

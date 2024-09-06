@@ -1,33 +1,8 @@
-use serde::{Deserialize, Serialize};
-
-#[derive(Serialize)]
-pub struct PaymentResponse {
-    pub id: uuid::Uuid,
-    pub subscription_id: Option<uuid::Uuid>,
-    pub amount: i64,
-    pub payment_date: Option<chrono::NaiveDateTime>,
-    pub payment_method: String,
-}
-
-#[derive(Serialize)]
-pub struct PaymentForSysResponse {
-    pub id: uuid::Uuid,
-    pub amount: i64,
-    pub payment_date: Option<chrono::NaiveDateTime>,
-    pub payment_method: String,
-    pub subscription: super::subscription_service::SubscriptionResponse,
-    pub plan: super::plan_service::PlanResponse,
-    pub username: String,
-    pub email: String,
-    pub user_id: uuid::Uuid,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct CreatePaymentRequest {
-    pub subscription_id: uuid::Uuid,
-    pub amount: i64,
-    pub payment_method: String,
-}
+use crate::dtos::{
+    payment_dtos::{CreatePaymentRequest, PaymentForSysResponse, PaymentResponse},
+    plan_dtos::PlanResponse,
+    subscription_dtos::SubscriptionResponse,
+};
 
 pub struct PaymentService {
     pub pool: sqlx::PgPool,
@@ -96,7 +71,7 @@ impl PaymentService {
                 user_id: payment.user_id.unwrap_or_default(),
                 username: payment.username,
                 email: payment.email,
-                subscription: super::subscription_service::SubscriptionResponse {
+                subscription: SubscriptionResponse {
                     id: payment.subscription_id.unwrap(),
                     user_id: payment.user_id,
                     plan_id: payment.plan_id,
@@ -104,7 +79,7 @@ impl PaymentService {
                     end_date: payment.end_date,
                     is_active: payment.is_active.unwrap_or_default(),
                 },
-                plan: super::plan_service::PlanResponse {
+                plan: PlanResponse {
                     id: payment.plan_id.unwrap(),
                     name: payment.name,
                     price: payment.price,

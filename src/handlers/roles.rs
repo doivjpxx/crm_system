@@ -9,7 +9,8 @@ use axum::{
 
 use crate::{
     app::AppState,
-    services::role_service::{CreateRoleRequest, RoleService, RoleServiceImpl},
+    dtos::role_dtos::CreateRoleRequest,
+    services::role_service::{RoleService, RoleServiceImpl},
 };
 
 pub async fn create_role(

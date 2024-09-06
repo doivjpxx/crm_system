@@ -5,6 +5,7 @@ use dotenv::dotenv;
 
 mod app;
 mod db;
+mod dtos;
 mod handlers;
 mod middlewares;
 mod models;
