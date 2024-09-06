@@ -9,6 +9,7 @@ mod handlers;
 mod middlewares;
 mod models;
 mod router;
+mod routes;
 mod services;
 
 #[tokio::main]
