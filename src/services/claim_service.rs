@@ -4,14 +4,15 @@ use axum::{
     http::{request::Parts, StatusCode},
     Json, RequestPartsExt,
 };
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, TokenData, Validation};
-use once_cell::sync::Lazy;
+use jsonwebtoken::{decode, encode, Header, TokenData, Validation};
 
 use axum_extra::{
     headers::{authorization::Bearer, Authorization},
     TypedHeader,
 };
 use serde::{Deserialize, Serialize};
+
+use crate::configs::keys::{KEYS, REFRESH_KEYS};
 
 use super::{
     sys_service::SysResponse,
@@ -36,30 +37,6 @@ pub struct RefreshClaims {
     pub iat: usize,
     pub exp: usize,
 }
-
-pub struct Keys {
-    pub encoding: EncodingKey,
-    pub decoding: DecodingKey,
-}
-
-impl Keys {
-    pub fn new(secret: &[u8]) -> Self {
-        Self {
-            encoding: EncodingKey::from_secret(secret),
-            decoding: DecodingKey::from_secret(secret),
-        }
-    }
-}
-
-static KEYS: Lazy<Keys> = Lazy::new(|| {
-    let secret = std::env::var("SECRET_KEY").expect("SECRET_KEY must be set");
-    Keys::new(secret.as_bytes())
-});
-
-static REFRESH_KEYS: Lazy<Keys> = Lazy::new(|| {
-    let secret = std::env::var("REFRESH_SECRET_KEY").expect("REFRESH_SECRET_KEY must be set");
-    Keys::new(secret.as_bytes())
-});
 
 impl Claims {
     pub fn encode_jwt(user: UserWithSubscriptionResponse) -> Result<String, (StatusCode, String)> {

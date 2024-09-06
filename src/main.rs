@@ -4,6 +4,7 @@ use app::AppState;
 use dotenv::dotenv;
 
 mod app;
+mod configs;
 mod db;
 mod dtos;
 mod handlers;
