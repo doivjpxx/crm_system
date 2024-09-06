@@ -215,3 +215,19 @@ pub async fn get_user_groups(
         )),
     }
 }
+
+pub async fn get_user_groups_by_child_id(
+    _: Claims,
+    Path(child_id): Path<uuid::Uuid>,
+    State(state): State<Arc<AppState>>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let user_service = UserGroupService::new(state.pool.clone());
+
+    match user_service.get_user_groups_by_child_id(child_id).await {
+        Ok(user_groups) => Ok((StatusCode::OK, Json(user_groups))),
+        Err(e) => Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!(e)),
+        )),
+    }
+}

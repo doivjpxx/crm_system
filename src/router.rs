@@ -23,7 +23,8 @@ use crate::{
         sys::{get_sys, sys_login},
         users::{
             change_password, create_child_user, create_user, get_current_user, get_user,
-            get_user_groups, get_users, login, refresh_token, register, update_user,
+            get_user_groups, get_user_groups_by_child_id, get_users, login, refresh_token,
+            register, update_user,
         },
     },
     middlewares::{auth::auth_middleware, create_role::allow_create_role, sys::sys_middleware},
@@ -62,6 +63,10 @@ impl AppRouter {
             .route("/profile/me", get(get_current_user))
             .route("/change-password", post(change_password))
             .route("/:username/group", get(get_user_groups))
+            .route(
+                "/:username/group-by-child",
+                get(get_user_groups_by_child_id),
+            )
             .route("/:username/add", patch(create_child_user))
             .route("/:username", get(get_user).put(update_user))
             .layer(axum::middleware::from_fn(auth_middleware));
