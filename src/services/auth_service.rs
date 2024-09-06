@@ -8,15 +8,30 @@ pub struct AuthService<'a> {
     salt: SaltString,
 }
 
-impl<'a> AuthService<'a> {
-    pub fn new() -> Self {
+pub trait AuthServiceImpl<'a> {
+     fn new() -> Self;
+
+     async fn hash_password(
+        &self,
+        password: String,
+    ) -> Result<String, argon2::password_hash::Error>;
+
+     async fn verify_password(
+        &self,
+        password: String,
+        hash: String,
+    ) -> Result<bool, argon2::password_hash::Error>;
+}
+
+impl<'a> AuthServiceImpl<'a> for AuthService<'a> {
+     fn new() -> Self {
         Self {
             argon2: Argon2::default(),
             salt: SaltString::generate(&mut OsRng),
         }
     }
 
-    pub async fn hash_password(
+     async fn hash_password(
         &self,
         password: String,
     ) -> Result<String, argon2::password_hash::Error> {
@@ -27,7 +42,7 @@ impl<'a> AuthService<'a> {
         Ok(password_hash.to_string())
     }
 
-    pub async fn verify_password(
+     async fn verify_password(
         &self,
         password: String,
         hash: String,

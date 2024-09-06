@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use super::{
-    plan_service::{PlanResponse, PlanService},
+    plan_service::{PlanResponse, PlanService, PlanServiceImpl},
     user_service::{UserResponse, UserService, UserServiceImpl},
 };
 
@@ -36,12 +36,34 @@ pub struct SubscriptionService {
     pub pool: sqlx::PgPool,
 }
 
-impl SubscriptionService {
-    pub fn new(pool: sqlx::PgPool) -> Self {
+pub trait SubscriptionServiceImpl {
+    fn new(pool: sqlx::PgPool) -> Self;
+
+    async fn activate_subscription(&self, subscription_id: uuid::Uuid) -> Result<(), String>;
+
+    async fn deactivate_subscription(&self, subscription_id: uuid::Uuid) -> Result<(), String>;
+
+    async fn create_subscription(
+        &self,
+        subscription: CreateSubscriptionRequest,
+    ) -> Result<SubscriptionResponse, String>;
+
+    async fn get_subscriptions(&self) -> Result<Vec<SubscriptionForSysResponse>, String>;
+
+    async fn get_subscription(&self, id: uuid::Uuid) -> Result<SubscriptionResponse, String>;
+
+    async fn get_subscriptions_for_by_username(
+        &self,
+        username: String,
+    ) -> Result<Vec<SubscriptionResponse>, String>;
+}
+
+impl SubscriptionServiceImpl for SubscriptionService {
+    fn new(pool: sqlx::PgPool) -> Self {
         Self { pool }
     }
 
-    pub async fn activate_subscription(&self, subscription_id: uuid::Uuid) -> Result<(), String> {
+    async fn activate_subscription(&self, subscription_id: uuid::Uuid) -> Result<(), String> {
         sqlx::query!(
             r#"
             UPDATE subscriptions
@@ -60,7 +82,7 @@ impl SubscriptionService {
         Ok(())
     }
 
-    pub async fn deactivate_subscription(&self, subscription_id: uuid::Uuid) -> Result<(), String> {
+    async fn deactivate_subscription(&self, subscription_id: uuid::Uuid) -> Result<(), String> {
         sqlx::query!(
             r#"
             UPDATE subscriptions
@@ -79,7 +101,7 @@ impl SubscriptionService {
         Ok(())
     }
 
-    pub async fn create_subscription(
+    async fn create_subscription(
         &self,
         subscription: CreateSubscriptionRequest,
     ) -> Result<SubscriptionResponse, String> {
@@ -122,7 +144,7 @@ impl SubscriptionService {
         })
     }
 
-    pub async fn get_subscriptions(&self) -> Result<Vec<SubscriptionForSysResponse>, String> {
+    async fn get_subscriptions(&self) -> Result<Vec<SubscriptionForSysResponse>, String> {
         let subscriptions = sqlx::query!(
             r#"
             SELECT s.id, user_id, plan_id, start_date, end_date, u.username, u.name as user_name, u.email, p.name as plan_name, p.price, p.trial_days, p.description
@@ -166,7 +188,7 @@ impl SubscriptionService {
             .collect())
     }
 
-    pub async fn get_subscription(&self, id: uuid::Uuid) -> Result<SubscriptionResponse, String> {
+    async fn get_subscription(&self, id: uuid::Uuid) -> Result<SubscriptionResponse, String> {
         let subscription = sqlx::query!(
             r#"
             SELECT id, user_id, plan_id, start_date, end_date, is_active
@@ -192,7 +214,7 @@ impl SubscriptionService {
         })
     }
 
-    pub async fn get_subscriptions_for_by_username(
+    async fn get_subscriptions_for_by_username(
         &self,
         username: String,
     ) -> Result<Vec<SubscriptionResponse>, String> {

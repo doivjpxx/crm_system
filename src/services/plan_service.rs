@@ -51,12 +51,28 @@ pub struct PlanService {
     pub pool: sqlx::PgPool,
 }
 
-impl PlanService {
-    pub fn new(pool: sqlx::PgPool) -> Self {
+pub trait PlanServiceImpl {
+    fn new(pool: sqlx::PgPool) -> Self;
+
+    async fn get_plan(&self, id: uuid::Uuid) -> Result<PlanResponse, String>;
+
+    async fn create_plan(&self, plan: CreatePlanRequest) -> Result<PlanResponse, String>;
+
+    async fn get_plans(&self) -> Result<Vec<PlanResponse>, String>;
+
+    async fn update_plan(
+        &self,
+        id: uuid::Uuid,
+        plan: CreatePlanRequest,
+    ) -> Result<PlanResponse, String>;
+}
+
+impl PlanServiceImpl for PlanService {
+    fn new(pool: sqlx::PgPool) -> Self {
         Self { pool }
     }
 
-    pub async fn get_plan(&self, id: uuid::Uuid) -> Result<PlanResponse, String> {
+    async fn get_plan(&self, id: uuid::Uuid) -> Result<PlanResponse, String> {
         let plan = sqlx::query!(
             r#"
             SELECT id, name, description, price, is_active, tags, trial_days, created_at
@@ -84,7 +100,7 @@ impl PlanService {
         })
     }
 
-    pub async fn create_plan(&self, plan: CreatePlanRequest) -> Result<PlanResponse, String> {
+    async fn create_plan(&self, plan: CreatePlanRequest) -> Result<PlanResponse, String> {
         let plan = sqlx::query!(
             r#"
             INSERT INTO plans (name, description, price, is_active, tags, trial_days)
@@ -117,7 +133,7 @@ impl PlanService {
         })
     }
 
-    pub async fn get_plans(&self) -> Result<Vec<PlanResponse>, String> {
+    async fn get_plans(&self) -> Result<Vec<PlanResponse>, String> {
         let plans = sqlx::query!(
             r#"
             SELECT id, name, description, price, is_active, tags, trial_days, created_at
@@ -146,7 +162,7 @@ impl PlanService {
             .collect())
     }
 
-    pub async fn update_plan(
+    async fn update_plan(
         &self,
         id: uuid::Uuid,
         plan: CreatePlanRequest,

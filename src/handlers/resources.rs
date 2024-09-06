@@ -9,7 +9,7 @@ use axum::{
 
 use crate::{
     app::AppState,
-    services::resource_service::{CreateResourceRequest, ResourceService},
+    services::resource_service::{CreateResourceRequest, ResourceService, ResourceServiceImpl},
 };
 
 pub async fn create_resource(

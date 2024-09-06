@@ -20,12 +20,25 @@ pub struct RoleService {
     pub pool: sqlx::PgPool,
 }
 
-impl RoleService {
-    pub fn new(pool: sqlx::PgPool) -> Self {
+pub trait RoleServiceImpl {
+    fn new(pool: sqlx::PgPool) -> Self;
+
+    async fn create_role(&self, role: CreateRoleRequest) -> Result<(), String>;
+
+    async fn update_role(&self, role: CreateRoleRequest) -> Result<(), String>;
+
+    async fn get_roles_by_user_created(
+        &self,
+        user_id: uuid::Uuid,
+    ) -> Result<Vec<RoleResponse>, String>;
+}
+
+impl RoleServiceImpl for RoleService {
+    fn new(pool: sqlx::PgPool) -> Self {
         Self { pool }
     }
 
-    pub async fn create_role(&self, role: CreateRoleRequest) -> Result<(), String> {
+    async fn create_role(&self, role: CreateRoleRequest) -> Result<(), String> {
         sqlx::query!(
             r#"
             INSERT INTO roles (name, description, created_by)
@@ -46,7 +59,7 @@ impl RoleService {
         Ok(())
     }
 
-    pub async fn update_role(&self, role: CreateRoleRequest) -> Result<(), String> {
+    async fn update_role(&self, role: CreateRoleRequest) -> Result<(), String> {
         let current_role = sqlx::query!(
             r#"
             SELECT * FROM roles WHERE id = $1
@@ -82,7 +95,7 @@ impl RoleService {
         Ok(())
     }
 
-    pub async fn get_roles_by_user_created(
+    async fn get_roles_by_user_created(
         &self,
         user_id: uuid::Uuid,
     ) -> Result<Vec<RoleResponse>, String> {

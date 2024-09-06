@@ -1,6 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use super::{auth_service::AuthService, claim_service};
+use super::{
+    auth_service::{AuthService, AuthServiceImpl},
+    claim_service,
+};
 
 #[derive(Deserialize)]
 pub struct SysLoginRequest {

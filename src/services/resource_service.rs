@@ -22,12 +22,33 @@ pub struct ResourceService {
     pub pool: sqlx::PgPool,
 }
 
-impl ResourceService {
-    pub fn new(pool: sqlx::PgPool) -> Self {
+pub trait ResourceServiceImpl {
+     fn new(pool: sqlx::PgPool) -> Self;
+
+     async fn create_resource(&self, resource: CreateResourceRequest) -> Result<(), String>;
+
+     async fn get_resource(&self, id: uuid::Uuid) -> Result<ResourceResponse, String>;
+
+     async fn get_resources_for_plan(
+        &self,
+        plan_id: uuid::Uuid,
+    ) -> Result<Vec<ResourceResponse>, String>;
+
+     async fn update_resource(
+        &self,
+        id: uuid::Uuid,
+        resource: CreateResourceRequest,
+    ) -> Result<(), String>;
+
+     async fn get_resources(&self) -> Result<Vec<ResourceResponse>, String>;
+}
+
+impl ResourceServiceImpl for ResourceService {
+     fn new(pool: sqlx::PgPool) -> Self {
         Self { pool }
     }
 
-    pub async fn create_resource(&self, resource: CreateResourceRequest) -> Result<(), String> {
+     async fn create_resource(&self, resource: CreateResourceRequest) -> Result<(), String> {
         sqlx::query!(
             r#"
             INSERT INTO resources (plan_id, max, name, description)
@@ -48,7 +69,7 @@ impl ResourceService {
         Ok(())
     }
 
-    pub async fn get_resource(&self, id: uuid::Uuid) -> Result<ResourceResponse, String> {
+     async fn get_resource(&self, id: uuid::Uuid) -> Result<ResourceResponse, String> {
         let resource = sqlx::query!(
             r#"
             SELECT id, plan_id, max, name, description, created_at
@@ -74,7 +95,7 @@ impl ResourceService {
         })
     }
 
-    pub async fn get_resources_for_plan(
+     async fn get_resources_for_plan(
         &self,
         plan_id: uuid::Uuid,
     ) -> Result<Vec<ResourceResponse>, String> {
@@ -106,7 +127,7 @@ impl ResourceService {
             .collect())
     }
 
-    pub async fn update_resource(
+     async fn update_resource(
         &self,
         id: uuid::Uuid,
         resource: CreateResourceRequest,
@@ -133,7 +154,7 @@ impl ResourceService {
         Ok(())
     }
 
-    pub async fn get_resources(&self) -> Result<Vec<ResourceResponse>, String> {
+     async fn get_resources(&self) -> Result<Vec<ResourceResponse>, String> {
         let resources = sqlx::query!(
             r#"
             SELECT id, plan_id, max, name, description, created_at

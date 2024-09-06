@@ -12,12 +12,18 @@ pub struct PermissionService {
     pub pool: sqlx::PgPool,
 }
 
-impl PermissionService {
-    pub fn new(pool: sqlx::PgPool) -> Self {
+pub trait PermissionServiceImpl {
+    fn new(pool: sqlx::PgPool) -> Self;
+
+    async fn get_permissions(&self) -> Result<Vec<PermissionResponse>, String>;
+}
+
+impl PermissionServiceImpl for PermissionService {
+    fn new(pool: sqlx::PgPool) -> Self {
         Self { pool }
     }
 
-    pub async fn get_permissions(&self) -> Result<Vec<PermissionResponse>, String> {
+    async fn get_permissions(&self) -> Result<Vec<PermissionResponse>, String> {
         let permissions = sqlx::query!(
             r#"
             SELECT id, name, description, created_at

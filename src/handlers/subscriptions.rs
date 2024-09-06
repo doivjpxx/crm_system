@@ -11,7 +11,9 @@ use crate::{
     app::AppState,
     services::{
         claim_service::Claims,
-        subscription_service::{CreateSubscriptionRequest, SubscriptionService},
+        subscription_service::{
+            CreateSubscriptionRequest, SubscriptionService, SubscriptionServiceImpl,
+        },
     },
 };
 

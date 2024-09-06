@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use axum::{extract::State, http::StatusCode, response::IntoResponse, Json};
 
-use crate::{app::AppState, services::permission_service::PermissionService};
+use crate::{
+    app::AppState,
+    services::permission_service::{PermissionService, PermissionServiceImpl},
+};
 
 pub async fn get_permissions(
     State(state): State<Arc<AppState>>,

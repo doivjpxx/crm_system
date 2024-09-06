@@ -9,7 +9,7 @@ use axum::{
 
 use crate::{
     app::AppState,
-    services::plan_service::{CreatePlanRequest, PlanService},
+    services::plan_service::{CreatePlanRequest, PlanService, PlanServiceImpl},
 };
 
 pub async fn get_plan(
