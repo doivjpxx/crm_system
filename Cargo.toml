@@ -3,10 +3,6 @@ name = "crm_system"
 version = "0.1.0"
 edition = "2021"
 
-[[bin]]
-name = "crm_system"
-path = "src/main.rs"
-
 [dependencies]
 argon2 = "0.5.3"
 axum = "0.7.5"

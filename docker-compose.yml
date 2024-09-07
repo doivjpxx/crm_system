@@ -12,4 +12,5 @@ services:
       - RUST_LOG=info
       - PORT=3000
       - SECRET_KEY=${{ secrets.SECRET_KEY }}
+      - REFRESH_SECRET_KEY=${{ secrets.REFRESH_SECRET_KEY }}
       - DATABASE_URL=${{ secrets.DATABASE_URL }}

@@ -22,6 +22,10 @@ RUN cargo build --release
 # Create a new stage for the final image
 FROM debian:bookworm-slim
 
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    libssl-dev
+
 # Set the working directory inside the container
 WORKDIR /app
 
