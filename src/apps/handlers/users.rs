@@ -9,7 +9,9 @@ use axum::{
 
 use crate::{
     app::AppState,
-    domain::dtos::user_dtos::{ChangePasswordRequest, CreateUserRequest, LoginRequest, UpdateUserRequest},
+    domain::dtos::user_dtos::{
+        ChangePasswordRequest, CreateUserRequest, LoginRequest, UpdateUserRequest,
+    },
     infra::services::{
         claim_service::Claims,
         user_group_service::{UserGroupService, UserGroupServiceImpl},

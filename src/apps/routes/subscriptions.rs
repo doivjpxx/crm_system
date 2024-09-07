@@ -8,7 +8,9 @@ use axum::{
 
 use crate::{
     apps::app::AppState,
-    apps::handlers::subscriptions::{create_subscription, get_subscription, get_subscription_by_user},
+    apps::handlers::subscriptions::{
+        create_subscription, get_subscription, get_subscription_by_user,
+    },
     apps::middlewares::auth::auth_middleware,
 };
 
