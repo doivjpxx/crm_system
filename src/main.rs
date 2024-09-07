@@ -1,25 +1,19 @@
 use std::sync::Arc;
 
-use app::AppState;
+use apps::app::{self, AppState};
 use dotenv::dotenv;
+use infra::{db::postgres, tracing::init_tracing};
 
-mod app;
-mod configs;
-mod db;
-mod dtos;
-mod handlers;
-mod middlewares;
-mod models;
-mod router;
-mod routes;
-mod services;
+mod apps;
+mod domain;
+mod infra;
 
 #[tokio::main]
 async fn main() {
     dotenv().ok();
-    tracing_subscriber::fmt::init();
+    init_tracing();
 
-    let pool = db::connect().await;
+    let pool: sqlx::Pool<sqlx::Postgres> = postgres::connect().await;
 
     app::run_app(Arc::new(AppState { pool })).await;
 }
