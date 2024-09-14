@@ -1,6 +1,4 @@
-use dotenv::dotenv;
 use sqlx::PgPool;
-use std::env;
 
 use crate::infra::configs::Config;
 
